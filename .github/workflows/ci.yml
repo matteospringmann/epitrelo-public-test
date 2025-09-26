@@ -1,6 +1,6 @@
 # .github/workflows/web-ci.yml
 
-name: Web App CI/CD Pipeline
+name: Web App CI Pipeline
 
 on:
     push:
@@ -9,7 +9,7 @@ on:
             - "web/**"
 
 jobs:
-    build-and-test:
+    build-and-lint:
         runs-on: ubuntu-latest
 
         steps:
@@ -34,7 +34,3 @@ jobs:
             - name: Build project
               working-directory: ./web
               run: npm run build
-
-            - name: Build Docker image
-              working-directory: ./web
-              run: docker build . --file Dockerfile --tag epitrello-web
