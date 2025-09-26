@@ -1,1 +1,13 @@
-@import "tailwindcss";
+/* web/src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        @apply scroll-smooth;
+    }
+    body {
+        @apply bg-background text-text font-sans antialiased;
+    }
+}
