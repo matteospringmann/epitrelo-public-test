@@ -18,6 +18,8 @@ model User {
 
   cards        Card[]
   lists        List[]
+
+  assignedCards Card[] @relation("AssignedCards")
 }
 
 model List {
@@ -42,4 +44,7 @@ model Card {
 
   list      List     @relation(fields: [listId], references: [id])
   listId    Int
+
+  assignedUser   User? @relation("AssignedCards", fields: [assignedUserId], references: [id])
+  assignedUserId Int?
 }
