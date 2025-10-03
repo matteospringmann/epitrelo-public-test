@@ -1,9 +1,6 @@
-// api/src/controllers/cardController.js (Version Finale et Fiable)
-
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-// ... createCard et getCards restent les mêmes ...
 export async function createCard(req, res) {
   const { title, content, listId } = req.body;
   if (!title || !listId) {
@@ -25,41 +22,43 @@ export async function createCard(req, res) {
     });
     res.status(201).json(card);
   } catch (error) {
-    console.error("Erreur lors de la création de la carte:", error);
     res.status(500).json({ error: "Impossible de créer la carte" });
   }
 }
 
 export async function updateCard(req, res) {
   const { id } = req.params;
-  const { title, content } = req.body;
+  const dataToUpdate = req.body;
 
-  // On met à jour la carte SEULEMENT si elle existe et appartient à une liste
-  // dont le board appartient à l'utilisateur.
-  const updatedCard = await prisma.card.updateMany({
-    where: {
-      id: Number(id),
-      list: { board: { userId: req.user.id } },
-    },
-    data: { title, content },
-  });
+  try {
+    const cardToUpdate = await prisma.card.findFirst({
+      where: {
+        id: Number(id),
+        list: { board: { userId: req.user.id } },
+      },
+    });
 
-  if (updatedCard.count === 0) {
-    return res
-      .status(404)
-      .json({ error: "Carte non trouvée ou accès non autorisé" });
+    if (!cardToUpdate) {
+      return res
+        .status(404)
+        .json({ error: "Carte non trouvée ou accès non autorisé" });
+    }
+
+    const updatedCard = await prisma.card.update({
+      where: { id: Number(id) },
+      data: dataToUpdate,
+    });
+    res.json(updatedCard);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la mise à jour de la carte" });
   }
-
-  res.json({ message: "Carte mise à jour" });
 }
 
-// --- CORRECTION DE LA LOGIQUE DE SUPPRESSION ---
 export async function deleteCard(req, res) {
   const { id } = req.params;
   try {
-    // On utilise `deleteMany` avec une condition de sécurité imbriquée.
-    // Cela supprime la carte SEULEMENT si elle correspond à l'ID ET
-    // si elle appartient à une liste d'un board de l'utilisateur connecté.
     const deleteResult = await prisma.card.deleteMany({
       where: {
         id: Number(id),
@@ -71,18 +70,14 @@ export async function deleteCard(req, res) {
       },
     });
 
-    // Si `deleteResult.count` est 0, cela signifie qu'aucune carte n'a été supprimée,
-    // soit parce que l'ID était mauvais, soit parce que l'utilisateur n'avait pas les droits.
     if (deleteResult.count === 0) {
       return res
         .status(404)
         .json({ error: "Carte non trouvée ou accès non autorisé" });
     }
 
-    // La suppression a réussi
     res.status(204).send();
   } catch (error) {
-    console.error("Erreur lors de la suppression de la carte:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 }

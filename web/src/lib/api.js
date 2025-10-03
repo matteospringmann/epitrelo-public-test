@@ -22,7 +22,9 @@ export async function getMe() {
 export async function logout() {
   try {
     await api.post("/auth/logout");
-  } catch {}
+  } catch {
+    // ignore
+  }
 }
 
 // =====================
@@ -51,7 +53,6 @@ export async function deleteBoard(id) {
 // Fonctions des Listes
 // =====================
 export async function createList(list) {
-  // Prend maintenant un objet comme { title, boardId }
   const { data: created } = await api.post("/lists", list);
   return created;
 }
@@ -71,4 +72,21 @@ export async function updateCard(id, card) {
 
 export async function deleteCard(id) {
   await api.delete(`/cards/${id}`);
+}
+
+// =====================
+// Fonctions de l'Utilisateur
+// =====================
+export async function updateUserProfile(userData) {
+  const { data } = await api.put("/user/profile", userData);
+  return data;
+}
+
+export async function getUserStats() {
+  const { data } = await api.get("/user/stats");
+  return data;
+}
+
+export async function deleteUserAccount() {
+  await api.delete("/user/account");
 }

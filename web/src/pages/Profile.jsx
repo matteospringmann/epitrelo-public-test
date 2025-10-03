@@ -1,19 +1,200 @@
-import React, { useEffect, useState } from 'react'
-import { getMe } from '../lib/api'
+// web/src/pages/Profile.jsx
+
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  getMe,
+  getUserStats,
+  updateUserProfile,
+  deleteUserAccount,
+  logout,
+} from "../lib/api";
+
+// Petite fonction utilitaire pour obtenir les initiales
+const getInitials = (name = "") => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+};
 
 export default function Profile() {
-  const [user, setUser] = useState(null)
-  useEffect(() => { getMe().then(setUser) }, [])
-  if (!user) return <div className="p-8">Chargement...</div>
+  const [user, setUser] = useState(null);
+  const [stats, setStats] = useState({
+    boardCount: 0,
+    listCount: 0,
+    cardCount: 0,
+  });
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [name, setName] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    Promise.all([getMe(), getUserStats()])
+      .then(([userData, userStats]) => {
+        setUser(userData);
+        setName(userData?.name || "");
+        setStats(userStats);
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleNameUpdate = async (e) => {
+    e.preventDefault();
+    if (!name.trim() || name === user.name) {
+      setIsEditingName(false);
+      return;
+    }
+    try {
+      const updatedUser = await updateUserProfile({ name });
+      setUser(updatedUser);
+      setIsEditingName(false);
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du nom:", error);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (
+      window.confirm(
+        "Êtes-vous absolument sûr ? Cette action est irréversible et supprimera tous vos projets.",
+      )
+    ) {
+      try {
+        await deleteUserAccount();
+        await logout();
+        navigate("/register");
+      } catch (error) {
+        console.error("Erreur lors de la suppression du compte:", error);
+      }
+    }
+  };
+
+  if (!user) {
+    return <div className="p-8 text-center">Chargement...</div>;
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <div className="bg-white/90 rounded-2xl shadow-xl p-8 w-full max-w-md border border-gray-100">
-        <h1 className="text-2xl font-bold text-purple-700 mb-4">Mon profil</h1>
-        <div className="space-y-2 text-gray-700">
-          <div><span className="font-semibold">Nom :</span> {user.name}</div>
-          <div><span className="font-semibold">Email :</span> {user.email}</div>
+    <div className="bg-background min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto">
+        {/* --- Section Avatar et Infos Principales --- */}
+        <div className="bg-white rounded-xl shadow-md border border-slate-200 p-8 flex flex-col sm:flex-row items-center gap-8">
+          <div className="relative">
+            <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center text-primary text-5xl font-bold">
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt="Avatar"
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <span>{getInitials(user.name)}</span>
+              )}
+            </div>
+          </div>
+          <div className="text-center sm:text-left">
+            {isEditingName ? (
+              <form
+                onSubmit={handleNameUpdate}
+                className="flex items-center gap-2"
+              >
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-primary text-white rounded-lg font-semibold"
+                >
+                  Sauvegarder
+                </button>
+              </form>
+            ) : (
+              <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-extrabold text-text">
+                  {user.name}
+                </h1>
+                <button
+                  onClick={() => setIsEditingName(true)}
+                  title="Modifier le nom"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-text-muted hover:text-primary"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                    <path
+                      fillRule="evenodd"
+                      d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
+            <p className="text-text-muted mt-1">{user.email}</p>
+            <p className="text-sm text-text-muted mt-2">
+              Membre depuis le{" "}
+              {new Date(user.createdAt).toLocaleDateString("fr-FR")}
+            </p>
+          </div>
+        </div>
+
+        {/* --- Section Statistiques --- */}
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-text mb-4">Votre Activité</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+              <h3 className="font-semibold text-text-muted">Projets</h3>
+              <p className="text-4xl font-extrabold text-primary mt-2">
+                {stats.boardCount}
+              </p>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+              <h3 className="font-semibold text-text-muted">Listes</h3>
+              <p className="text-4xl font-extrabold text-primary mt-2">
+                {stats.listCount}
+              </p>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+              <h3 className="font-semibold text-text-muted">Tâches</h3>
+              <p className="text-4xl font-extrabold text-primary mt-2">
+                {stats.cardCount}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* --- Zone de Danger --- */}
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-red-600 mb-4">
+            Zone de Danger
+          </h2>
+          <div className="bg-white p-6 rounded-xl shadow-md border border-red-200">
+            <div className="flex flex-col sm:flex-row justify-between items-center">
+              <div>
+                <h3 className="font-bold text-text">Supprimer le compte</h3>
+                <p className="text-sm text-text-muted mt-1">
+                  Cette action est irréversible et supprimera toutes vos
+                  données.
+                </p>
+              </div>
+              <button
+                onClick={handleDeleteAccount}
+                className="mt-4 sm:mt-0 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition"
+              >
+                Supprimer mon compte
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
