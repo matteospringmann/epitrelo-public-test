@@ -3,7 +3,7 @@ import Layout from './components/Layout'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Boards from './pages/Boards'
+import Boards from './pages/SingleBoardPage'
 import Protected from './components/Protected'
 import Header from './components/Header'
 
