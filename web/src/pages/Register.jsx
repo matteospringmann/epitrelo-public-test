@@ -1,10 +1,8 @@
 // web/src/pages/Register.jsx
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 
-// On réutilise le même composant d'icône que sur la page de connexion
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 48 48">
     <path
@@ -38,7 +36,7 @@ export default function Register() {
     setErr(null);
     try {
       await api.post("/auth/register", { name, email, password });
-      nav("/boards"); // Redirige vers les boards après une inscription réussie
+      nav("/boards");
     } catch (e) {
       setErr(e.response?.data?.error || "L'inscription a échoué");
     }
@@ -102,7 +100,7 @@ export default function Register() {
             <input
               id="name"
               className="mt-1 w-full border border-slate-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary-light transition"
-              placeholder="Mattéo Springmann"
+              placeholder="Prénom Nom"
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
