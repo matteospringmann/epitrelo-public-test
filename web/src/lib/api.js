@@ -90,3 +90,40 @@ export async function getUserStats() {
 export async function deleteUserAccount() {
   await api.delete("/user/account");
 }
+
+// =====================
+// Fonctions des Commentaires
+// =====================
+export async function createComment(comment) {
+  const { data: created } = await api.post("/comments", comment);
+  return created;
+}
+
+// =====================
+// Fonctions des Étiquettes
+// =====================
+export async function createLabel(label) {
+  const { data: created } = await api.post("/labels", label);
+  return created;
+}
+
+export async function updateLabel(id, labelData) {
+  const { data: updated } = await api.put(`/labels/${id}`, labelData);
+  return updated;
+}
+
+export async function deleteLabel(id) {
+  await api.delete(`/labels/${id}`);
+}
+
+export async function assignLabelToCard(labelId, cardId) {
+  const { data: updated } = await api.post(`/labels/${labelId}/card/${cardId}`);
+  return updated;
+}
+
+export async function removeLabelFromCard(labelId, cardId) {
+  const { data: updated } = await api.delete(
+    `/labels/${labelId}/card/${cardId}`,
+  );
+  return updated;
+}

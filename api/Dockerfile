@@ -15,5 +15,5 @@ COPY . .
 RUN npx prisma generate
 
 # Lancement
-CMD sh -c "npx prisma migrate deploy && node src/index.js"
+CMD sh -c "npx prisma migrate deploy && node src/server.js"
 EXPOSE 4000

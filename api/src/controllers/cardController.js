@@ -47,6 +47,17 @@ export async function updateCard(req, res) {
     const updatedCard = await prisma.card.update({
       where: { id: Number(id) },
       data: dataToUpdate,
+      include: {
+        labels: true,
+        comments: {
+          include: {
+            user: {
+              select: { id: true, name: true, avatarUrl: true },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
+      },
     });
     res.json(updatedCard);
   } catch (error) {

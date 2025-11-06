@@ -19,9 +19,21 @@ export async function getBoardById(req, res) {
         include: {
           cards: {
             orderBy: { id: "asc" },
+            include: {
+              labels: true,
+              comments: {
+                include: {
+                  user: {
+                    select: { id: true, name: true, avatarUrl: true },
+                  },
+                },
+                orderBy: { createdAt: "asc" },
+              },
+            },
           },
         },
       },
+      labels: true,
     },
   });
 

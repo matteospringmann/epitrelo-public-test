@@ -1,4 +1,4 @@
-// web/src/pages/SingleBoardPage.jsx
+// web/src/pages/SingleBoardPage.jsx (Version corrigée)
 
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
@@ -24,22 +24,75 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { createPortal } from "react-dom";
+import CardModal from "../components/CardModal";
 
-// ===================================================================
-// DÉFINITION DES SOUS-COMPOSANTS
-// ===================================================================
-
-function Card({ card, onDelete }) {
+function Card({ card, onDelete, onOpenModal }) {
   return (
-    <div className="bg-white rounded-lg shadow-md border border-slate-200 group relative">
+    <div
+      className="bg-white rounded-lg shadow-md border border-slate-200 group relative cursor-pointer hover:border-primary"
+      onClick={onOpenModal}
+    >
       <div className="p-3">
-        <div className="font-semibold text-text">{card.title}</div>
-        {card.content && (
-          <p className="text-sm text-text-muted mt-1">{card.content}</p>
-        )}
+        <div className="flex flex-wrap gap-1 mb-2">
+          {card.labels?.map((label) => (
+            <div
+              key={label.id}
+              className="h-2 w-10 rounded-full"
+              style={{ backgroundColor: label.color }}
+              title={label.name}
+            ></div>
+          ))}
+        </div>
+        <p className="font-semibold text-text">{card.title}</p>
+        <div className="flex items-center gap-3 mt-2">
+          {card.content && (
+            <div
+              className="text-xs text-text-muted flex items-center gap-1"
+              title="Cette carte a une description"
+            >
+              <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h7"
+                />
+              </svg>
+            </div>
+          )}
+          {card.comments?.length > 0 && (
+            <div
+              className="text-xs text-text-muted flex items-center gap-1"
+              title={`${card.comments.length} commentaire(s)`}
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+              {card.comments.length}
+            </div>
+          )}
+        </div>
       </div>
       <button
-        onClick={onDelete}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
         className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 transition-all z-10"
         title="Supprimer la carte"
       >
@@ -62,7 +115,7 @@ function Card({ card, onDelete }) {
   );
 }
 
-function SortableCard({ card, onDelete }) {
+function SortableCard({ card, onDelete, onOpenModal }) {
   const {
     attributes,
     listeners,
@@ -86,7 +139,7 @@ function SortableCard({ card, onDelete }) {
       {...listeners}
       className="touch-none"
     >
-      <Card card={card} onDelete={onDelete} />
+      <Card card={card} onDelete={onDelete} onOpenModal={onOpenModal} />
     </div>
   );
 }
@@ -146,7 +199,7 @@ function AddCardForm({ onAdd }) {
   );
 }
 
-function ListContainer({ list, onAddCard, onDeleteCard }) {
+function ListContainer({ list, onAddCard, onDeleteCard, onOpenModal }) {
   const { setNodeRef } = useSortable({ id: list.id, data: { type: "list" } });
 
   return (
@@ -165,6 +218,7 @@ function ListContainer({ list, onAddCard, onDeleteCard }) {
               key={card.id}
               card={card}
               onDelete={() => onDeleteCard(list.id, card.id)}
+              onOpenModal={() => onOpenModal(card)}
             />
           ))}
         </div>
@@ -174,21 +228,19 @@ function ListContainer({ list, onAddCard, onDeleteCard }) {
   );
 }
 
-// ==============================================================
-// COMPOSANT PRINCIPAL DE LA PAGE
-// ==============================================================
 export default function SingleBoardPage() {
   const { boardId } = useParams();
   const [board, setBoard] = useState(null);
   const [lists, setLists] = useState([]);
   const [newListTitle, setNewListTitle] = useState("");
   const [activeCard, setActiveCard] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
-  useEffect(() => {
+  const fetchBoard = () => {
     if (boardId) {
       getBoardById(boardId)
         .then((data) => {
@@ -197,7 +249,28 @@ export default function SingleBoardPage() {
         })
         .catch(console.error);
     }
+  };
+
+  useEffect(() => {
+    fetchBoard();
   }, [boardId]);
+
+  const handleOpenModal = (card) => setSelectedCard(card);
+  const handleCloseModal = () => setSelectedCard(null);
+
+  const handleCardUpdate = (updatedCard) => {
+    setLists((currentLists) =>
+      currentLists.map((list) => ({
+        ...list,
+        cards: list.cards.map((card) =>
+          card.id === updatedCard.id ? updatedCard : card,
+        ),
+      })),
+    );
+    if (selectedCard && selectedCard.id === updatedCard.id) {
+      setSelectedCard(updatedCard);
+    }
+  };
 
   async function handleAddList(e) {
     e.preventDefault();
@@ -254,27 +327,20 @@ export default function SingleBoardPage() {
   function handleDragEnd(event) {
     const { active, over } = event;
     setActiveCard(null);
-
     if (!over) return;
-
     const activeId = active.id;
     const overId = over.id;
-
     if (activeId === overId) return;
-
     setLists((currentLists) => {
       const activeList = findListForCard(activeId, currentLists);
       const overList = currentLists.find(
         (list) =>
           list.id === overId || list.cards.some((card) => card.id === overId),
       );
-
       if (!activeList || !overList) return currentLists;
-
       if (activeList.id === overList.id) {
         const oldIndex = activeList.cards.findIndex((c) => c.id === activeId);
         const newIndex = overList.cards.findIndex((c) => c.id === overId);
-
         return currentLists.map((list) =>
           list.id === activeList.id
             ? { ...list, cards: arrayMove(list.cards, oldIndex, newIndex) }
@@ -286,7 +352,6 @@ export default function SingleBoardPage() {
           (l) => l.id === activeList.id,
         );
         const overListIndex = newLists.findIndex((l) => l.id === overList.id);
-
         const activeCardIndex = activeList.cards.findIndex(
           (c) => c.id === activeId,
         );
@@ -294,15 +359,12 @@ export default function SingleBoardPage() {
           activeCardIndex,
           1,
         );
-
         let overCardIndex = overList.cards.findIndex((c) => c.id === overId);
         if (overCardIndex === -1) {
           overCardIndex = overList.cards.length;
         }
         newLists[overListIndex].cards.splice(overCardIndex, 0, movedCard);
-
         updateCard(activeId, { listId: overList.id }).catch(console.error);
-
         return newLists;
       }
     });
@@ -334,6 +396,7 @@ export default function SingleBoardPage() {
               list={list}
               onAddCard={handleAddCard}
               onDeleteCard={handleDeleteCard}
+              onOpenModal={handleOpenModal}
             />
           ))}
           <div className="w-72 flex-shrink-0">
@@ -358,9 +421,27 @@ export default function SingleBoardPage() {
         </div>
       </div>
 
+      {selectedCard &&
+        createPortal(
+          <CardModal
+            card={selectedCard}
+            board={board}
+            onClose={handleCloseModal}
+            onCardUpdate={handleCardUpdate}
+            onBoardUpdate={fetchBoard}
+          />,
+          document.body,
+        )}
+
       {createPortal(
         <DragOverlay>
-          {activeCard ? <Card card={activeCard} onDelete={() => {}} /> : null}
+          {activeCard ? (
+            <Card
+              card={activeCard}
+              onDelete={() => {}}
+              onOpenModal={() => {}}
+            />
+          ) : null}
         </DragOverlay>,
         document.body,
       )}
