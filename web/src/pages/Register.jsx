@@ -1,6 +1,6 @@
 // web/src/pages/Register.jsx
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 
 const GoogleIcon = () => (
@@ -30,13 +30,15 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState(null);
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get("redirect");
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr(null);
     try {
       await api.post("/auth/register", { name, email, password });
-      nav("/boards");
+      nav(redirectPath || "/boards");
     } catch (e) {
       setErr(e.response?.data?.error || "L'inscription a échoué");
     }

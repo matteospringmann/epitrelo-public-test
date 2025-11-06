@@ -127,3 +127,13 @@ export async function removeLabelFromCard(labelId, cardId) {
   );
   return updated;
 }
+
+export async function createInvitationLink(boardId) {
+  const { data } = await api.post(`/boards/${boardId}/invitations`);
+  return data.inviteLink;
+}
+
+export async function acceptInvitation(token) {
+  const { data } = await api.post(`/invitations/${token}/accept`);
+  return data.boardId;
+}

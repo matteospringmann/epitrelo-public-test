@@ -1,5 +1,20 @@
+// api/src/controllers/cardController.js
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
+
+// Fonction centralisée pour vérifier l'accès
+const checkCardAccess = (cardId, userId) => {
+  return prisma.card.findFirst({
+    where: {
+      id: Number(cardId),
+      list: {
+        board: {
+          OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+        },
+      },
+    },
+  });
+};
 
 export async function createCard(req, res) {
   const { title, content, listId } = req.body;
@@ -10,15 +25,24 @@ export async function createCard(req, res) {
   }
   try {
     const list = await prisma.list.findFirst({
-      where: { id: listId, board: { userId: req.user.id } },
+      where: {
+        id: Number(listId),
+        board: {
+          OR: [
+            { ownerId: req.user.id },
+            { members: { some: { id: req.user.id } } },
+          ],
+        },
+      },
     });
+
     if (!list) {
       return res
         .status(404)
         .json({ error: "Liste non trouvée ou accès non autorisé" });
     }
     const card = await prisma.card.create({
-      data: { title, content, listId },
+      data: { title, content, listId: Number(listId) },
     });
     res.status(201).json(card);
   } catch (error) {
@@ -29,15 +53,8 @@ export async function createCard(req, res) {
 export async function updateCard(req, res) {
   const { id } = req.params;
   const dataToUpdate = req.body;
-
   try {
-    const cardToUpdate = await prisma.card.findFirst({
-      where: {
-        id: Number(id),
-        list: { board: { userId: req.user.id } },
-      },
-    });
-
+    const cardToUpdate = await checkCardAccess(id, req.user.id);
     if (!cardToUpdate) {
       return res
         .status(404)
@@ -51,9 +68,7 @@ export async function updateCard(req, res) {
         labels: true,
         comments: {
           include: {
-            user: {
-              select: { id: true, name: true, avatarUrl: true },
-            },
+            user: { select: { id: true, name: true, avatarUrl: true } },
           },
           orderBy: { createdAt: "asc" },
         },
@@ -70,23 +85,13 @@ export async function updateCard(req, res) {
 export async function deleteCard(req, res) {
   const { id } = req.params;
   try {
-    const deleteResult = await prisma.card.deleteMany({
-      where: {
-        id: Number(id),
-        list: {
-          board: {
-            userId: req.user.id,
-          },
-        },
-      },
-    });
-
-    if (deleteResult.count === 0) {
+    const cardToDelete = await checkCardAccess(id, req.user.id);
+    if (!cardToDelete) {
       return res
         .status(404)
         .json({ error: "Carte non trouvée ou accès non autorisé" });
     }
-
+    await prisma.card.delete({ where: { id: Number(id) } });
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: "Erreur serveur" });

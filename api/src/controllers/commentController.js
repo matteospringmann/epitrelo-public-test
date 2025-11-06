@@ -1,7 +1,7 @@
+// api/src/controllers/commentController.js
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-// Créer un nouveau commentaire
 export async function createComment(req, res) {
   const { text, cardId } = req.body;
   const userId = req.user.id;
@@ -13,11 +13,14 @@ export async function createComment(req, res) {
   }
 
   try {
-    // Vérifier que l'utilisateur a accès à la carte
     const card = await prisma.card.findFirst({
       where: {
-        id: cardId,
-        list: { board: { userId } },
+        id: Number(cardId),
+        list: {
+          board: {
+            OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+          },
+        },
       },
     });
 
@@ -28,11 +31,7 @@ export async function createComment(req, res) {
     }
 
     const comment = await prisma.comment.create({
-      data: {
-        text,
-        cardId,
-        userId,
-      },
+      data: { text, cardId: Number(cardId), userId },
       include: {
         user: { select: { id: true, name: true, avatarUrl: true } },
       },

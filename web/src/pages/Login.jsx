@@ -1,7 +1,7 @@
 // web/src/pages/Login.jsx
 
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 
 // Composant pour l'icône Google
@@ -31,13 +31,15 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState(null);
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get("redirect");
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr(null);
     try {
       await api.post("/auth/login", { email, password });
-      nav("/boards");
+      nav(redirectPath || "/boards");
     } catch (e) {
       setErr(e.response?.data?.error || "La connexion a échoué");
     }

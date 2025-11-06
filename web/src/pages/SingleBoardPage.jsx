@@ -1,4 +1,4 @@
-// web/src/pages/SingleBoardPage.jsx (Version corrigée)
+// web/src/pages/SingleBoardPage.jsx (Version complète et corrigée)
 
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
@@ -8,6 +8,7 @@ import {
   createCard,
   deleteCard,
   updateCard,
+  createInvitationLink, // Importation de la nouvelle fonction
 } from "../lib/api";
 import {
   DndContext,
@@ -235,6 +236,7 @@ export default function SingleBoardPage() {
   const [newListTitle, setNewListTitle] = useState("");
   const [activeCard, setActiveCard] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
+  const [inviteLink, setInviteLink] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -254,6 +256,18 @@ export default function SingleBoardPage() {
   useEffect(() => {
     fetchBoard();
   }, [boardId]);
+
+  const handleCreateInvite = async () => {
+    try {
+      const link = await createInvitationLink(boardId);
+      setInviteLink(link);
+      navigator.clipboard.writeText(link);
+      alert("Lien d'invitation copié dans le presse-papiers !");
+    } catch (error) {
+      console.error("Failed to create invitation link:", error);
+      alert("Erreur lors de la création du lien d'invitation.");
+    }
+  };
 
   const handleOpenModal = (card) => setSelectedCard(card);
   const handleCloseModal = () => setSelectedCard(null);
@@ -381,14 +395,23 @@ export default function SingleBoardPage() {
       onDragEnd={handleDragEnd}
     >
       <div className="p-4 sm:p-6 lg:p-8 min-h-screen bg-background">
-        <header className="mb-8">
-          <Link to="/boards" className="text-sm text-primary hover:underline">
-            &larr; Retour aux projets
-          </Link>
-          <h1 className="text-3xl font-extrabold text-text mt-2">
-            {board.title}
-          </h1>
+        <header className="mb-8 flex justify-between items-center">
+          <div>
+            <Link to="/boards" className="text-sm text-primary hover:underline">
+              &larr; Retour aux projets
+            </Link>
+            <h1 className="text-3xl font-extrabold text-text mt-2">
+              {board.title}
+            </h1>
+          </div>
+          <button
+            onClick={handleCreateInvite}
+            className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-dark transition"
+          >
+            Inviter
+          </button>
         </header>
+
         <div className="flex gap-6 overflow-x-auto pb-4 items-start">
           {lists.map((list) => (
             <ListContainer

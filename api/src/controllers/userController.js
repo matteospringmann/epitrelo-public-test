@@ -1,4 +1,5 @@
-// api/src/controllers/userController.js
+// api/src/controllers/userController.js (Entièrement Corrigé)
+
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
@@ -28,15 +29,27 @@ export async function getUserStats(req, res) {
   const userId = req.user.id;
   try {
     const boardCount = await prisma.board.count({
-      where: { userId },
+      where: {
+        OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+      },
     });
 
     const listCount = await prisma.list.count({
-      where: { board: { userId } },
+      where: {
+        board: {
+          OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+        },
+      },
     });
 
     const cardCount = await prisma.card.count({
-      where: { list: { board: { userId } } },
+      where: {
+        list: {
+          board: {
+            OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+          },
+        },
+      },
     });
 
     res.json({ boardCount, listCount, cardCount });
@@ -51,6 +64,7 @@ export async function getUserStats(req, res) {
 export async function deleteUserAccount(req, res) {
   const userId = req.user.id;
   try {
+    // Note : La logique de suppression en cascade est gérée par le schéma Prisma
     await prisma.user.delete({
       where: { id: userId },
     });
