@@ -1,5 +1,3 @@
-// api/src/controllers/boardController.js
-
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
@@ -26,6 +24,9 @@ export async function getBoardById(req, res) {
       ],
     },
     include: {
+      members: {
+        select: { id: true, name: true, email: true, avatarUrl: true },
+      },
       lists: {
         orderBy: { id: "asc" },
         include: {
@@ -33,6 +34,9 @@ export async function getBoardById(req, res) {
             orderBy: { id: "asc" },
             include: {
               labels: true,
+              assignedUser: {
+                select: { id: true, name: true, avatarUrl: true },
+              },
               comments: {
                 include: {
                   user: {
@@ -72,6 +76,34 @@ export async function createBoard(req, res) {
     },
   });
   res.status(201).json(board);
+}
+
+export async function updateBoard(req, res) {
+  const { id } = req.params;
+  const { title, background } = req.body;
+
+  const boardToUpdate = await prisma.board.findFirst({
+    where: {
+      id: Number(id),
+      OR: [
+        { ownerId: req.user.id },
+        { members: { some: { id: req.user.id } } },
+      ],
+    },
+  });
+
+  if (!boardToUpdate) {
+    return res
+      .status(404)
+      .json({ error: "Board non trouvé ou accès non autorisé" });
+  }
+
+  const updatedBoard = await prisma.board.update({
+    where: { id: Number(id) },
+    data: { title, background },
+  });
+
+  res.json(updatedBoard);
 }
 
 export async function deleteBoard(req, res) {

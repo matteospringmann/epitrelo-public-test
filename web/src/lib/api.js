@@ -1,5 +1,3 @@
-// web/src/lib/api.js (Version corrigée et complète)
-
 import axios from "axios";
 
 export const api = axios.create({
@@ -7,9 +5,6 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-// =====================
-// Fonctions d'Authentification
-// =====================
 export async function getMe() {
   try {
     const { data } = await api.get("/auth/me");
@@ -22,14 +17,9 @@ export async function getMe() {
 export async function logout() {
   try {
     await api.post("/auth/logout");
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
-// =====================
-// Fonctions des Boards
-// =====================
 export async function getBoards() {
   const { data } = await api.get("/boards");
   return data;
@@ -45,21 +35,20 @@ export async function createBoard(board) {
   return created;
 }
 
+export async function updateBoard(id, boardData) {
+  const { data } = await api.put(`/boards/${id}`, boardData);
+  return data;
+}
+
 export async function deleteBoard(id) {
   await api.delete(`/boards/${id}`);
 }
 
-// =====================
-// Fonctions des Listes
-// =====================
 export async function createList(list) {
   const { data: created } = await api.post("/lists", list);
   return created;
 }
 
-// =====================
-// Fonctions des Cartes
-// =====================
 export async function createCard(card) {
   const { data: created } = await api.post("/cards", card);
   return created;
@@ -74,9 +63,6 @@ export async function deleteCard(id) {
   await api.delete(`/cards/${id}`);
 }
 
-// =====================
-// Fonctions de l'Utilisateur
-// =====================
 export async function updateUserProfile(userData) {
   const { data } = await api.put("/user/profile", userData);
   return data;
@@ -91,17 +77,11 @@ export async function deleteUserAccount() {
   await api.delete("/user/account");
 }
 
-// =====================
-// Fonctions des Commentaires
-// =====================
 export async function createComment(comment) {
   const { data: created } = await api.post("/comments", comment);
   return created;
 }
 
-// =====================
-// Fonctions des Étiquettes
-// =====================
 export async function createLabel(label) {
   const { data: created } = await api.post("/labels", label);
   return created;

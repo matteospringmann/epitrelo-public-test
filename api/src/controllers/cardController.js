@@ -1,8 +1,6 @@
-// api/src/controllers/cardController.js
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-// Fonction centralisée pour vérifier l'accès
 const checkCardAccess = (cardId, userId) => {
   return prisma.card.findFirst({
     where: {
@@ -17,7 +15,7 @@ const checkCardAccess = (cardId, userId) => {
 };
 
 export async function createCard(req, res) {
-  const { title, content, listId } = req.body;
+  const { title, content, listId, deadline } = req.body;
   if (!title || !listId) {
     return res
       .status(400)
@@ -42,7 +40,12 @@ export async function createCard(req, res) {
         .json({ error: "Liste non trouvée ou accès non autorisé" });
     }
     const card = await prisma.card.create({
-      data: { title, content, listId: Number(listId) },
+      data: {
+        title,
+        content,
+        listId: Number(listId),
+        deadline: deadline ? new Date(deadline) : null,
+      },
     });
     res.status(201).json(card);
   } catch (error) {
@@ -52,7 +55,12 @@ export async function createCard(req, res) {
 
 export async function updateCard(req, res) {
   const { id } = req.params;
-  const dataToUpdate = req.body;
+  const { deadline, ...dataToUpdate } = req.body;
+
+  if (deadline !== undefined) {
+    dataToUpdate.deadline = deadline ? new Date(deadline) : null;
+  }
+
   try {
     const cardToUpdate = await checkCardAccess(id, req.user.id);
     if (!cardToUpdate) {
@@ -66,6 +74,9 @@ export async function updateCard(req, res) {
       data: dataToUpdate,
       include: {
         labels: true,
+        assignedUser: {
+          select: { id: true, name: true, avatarUrl: true },
+        },
         comments: {
           include: {
             user: { select: { id: true, name: true, avatarUrl: true } },

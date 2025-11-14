@@ -1,4 +1,3 @@
-// api/prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,35 +8,32 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  name         String
-  email        String   @unique
-  passwordHash String?
-  googleId     String?
-  avatarUrl    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  ownedBoards Board[] @relation("OwnedBoards")
-  boards      Board[] @relation("BoardMembers")
-
-  comments Comment[] // Un utilisateur peut écrire plusieurs commentaires
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  passwordHash  String?
+  googleId      String?
+  avatarUrl     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  ownedBoards   Board[]  @relation("OwnedBoards")
+  boards        Board[]  @relation("BoardMembers")
+  comments      Comment[]
+  assignedCards Card[]
 }
 
 model Board {
-  id        Int      @id @default(autoincrement())
-  title     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  owner   User @relation("OwnedBoards", fields: [ownerId], references: [id])
-  ownerId Int
-
-  members User[] @relation("BoardMembers") // Liste des membres du board
-
+  id          Int          @id @default(autoincrement())
+  title       String
+  background  String?      @default("default")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  owner       User         @relation("OwnedBoards", fields: [ownerId], references: [id])
+  ownerId     Int
+  members     User[]       @relation("BoardMembers")
   lists       List[]
   labels      Label[]
-  invitations Invitation[] // Invitations liées à ce board
+  invitations Invitation[]
 }
 
 model List {
@@ -45,25 +41,24 @@ model List {
   title     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  boardId Int
-
-  cards Card[]
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId   Int
+  cards     Card[]
 }
 
 model Card {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  list   List @relation(fields: [listId], references: [id], onDelete: Cascade)
-  listId Int
-
-  comments Comment[] // Une carte peut avoir plusieurs commentaires
-  labels   Label[]   // Une carte peut avoir plusieurs étiquettes
+  id             Int       @id @default(autoincrement())
+  title          String
+  content        String?
+  deadline       DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  list           List      @relation(fields: [listId], references: [id], onDelete: Cascade)
+  listId         Int
+  comments       Comment[]
+  labels         Label[]
+  assignedUser   User?     @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
+  assignedUserId Int?
 }
 
 model Comment {
@@ -71,12 +66,10 @@ model Comment {
   text      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  card   Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  cardId Int
-
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId Int
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  cardId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
 }
 
 model Label {
@@ -85,18 +78,15 @@ model Label {
   color     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  boardId Int
-
-  cards Card[] // Une étiquette peut être sur plusieurs cartes
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId   Int
+  cards     Card[]
 }
 
 model Invitation {
   id        Int      @id @default(autoincrement())
   token     String   @unique
   createdAt DateTime @default(now())
-
-  board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  boardId Int
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId   Int
 }

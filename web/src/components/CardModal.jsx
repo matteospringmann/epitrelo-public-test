@@ -1,5 +1,3 @@
-// web/src/components/CardModal.jsx (Version corrigée)
-
 import React, { useState, useEffect } from "react";
 import {
   createComment,
@@ -10,6 +8,7 @@ import {
   updateLabel,
   deleteLabel,
 } from "../lib/api";
+import Avatar from "./Avatar";
 
 const DescriptionIcon = () => (
   <svg
@@ -56,6 +55,36 @@ const LabelIcon = () => (
     />
   </svg>
 );
+const MembersIcon = () => (
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+    />
+  </svg>
+);
+const DateIcon = () => (
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+    />
+  </svg>
+);
 
 export default function CardModal({
   card,
@@ -68,10 +97,17 @@ export default function CardModal({
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editableContent, setEditableContent] = useState(card?.content || "");
   const [isLabelPopoverOpen, setIsLabelPopoverOpen] = useState(false);
+  const [isMemberPopoverOpen, setIsMemberPopoverOpen] = useState(false);
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const [popoverView, setPopoverView] = useState("main");
   const [editingLabel, setEditingLabel] = useState(null);
   const [labelName, setLabelName] = useState("");
   const [labelColor, setLabelColor] = useState("#6d28d9");
+  const [selectedDate, setSelectedDate] = useState(
+    card?.deadline
+      ? new Date(card.deadline).toISOString().substring(0, 10)
+      : "",
+  );
 
   const availableColors = [
     "#6d28d9",
@@ -84,6 +120,11 @@ export default function CardModal({
 
   useEffect(() => {
     setEditableContent(card?.content || "");
+    setSelectedDate(
+      card?.deadline
+        ? new Date(card.deadline).toISOString().substring(0, 10)
+        : "",
+    );
   }, [card]);
 
   if (!card) return null;
@@ -157,6 +198,31 @@ export default function CardModal({
     setPopoverView("create");
   };
 
+  const handleAssignUser = async (userId) => {
+    const newAssignedUserId = card.assignedUserId === userId ? null : userId;
+    const updated = await updateCard(card.id, {
+      assignedUserId: newAssignedUserId,
+    });
+    onCardUpdate(updated);
+    setIsMemberPopoverOpen(false);
+  };
+
+  const handleDateSave = async () => {
+    if (!selectedDate) return;
+    const newDeadline = new Date(selectedDate);
+    const updated = await updateCard(card.id, {
+      deadline: newDeadline.toISOString(),
+    });
+    onCardUpdate(updated);
+    setIsDatePopoverOpen(false);
+  };
+
+  const handleDateRemove = async () => {
+    const updated = await updateCard(card.id, { deadline: null });
+    onCardUpdate(updated);
+    setIsDatePopoverOpen(false);
+  };
+
   const renderLabelPopoverContent = () => {
     if (popoverView === "create" || popoverView === "edit") {
       return (
@@ -207,7 +273,6 @@ export default function CardModal({
         </div>
       );
     }
-
     return (
       <div>
         <h4 className="text-center font-semibold text-sm mb-3">Étiquettes</h4>
@@ -248,6 +313,54 @@ export default function CardModal({
     );
   };
 
+  const renderMemberPopoverContent = () => (
+    <div>
+      <h4 className="text-center font-semibold text-sm mb-3">Membres</h4>
+      <div className="space-y-2">
+        {(board?.members || []).map((member) => (
+          <div
+            key={member.id}
+            className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-surface cursor-pointer"
+            onClick={() => handleAssignUser(member.id)}
+          >
+            <Avatar user={member} />
+            <span className="flex-1 text-sm font-medium">{member.name}</span>
+            {card.assignedUserId === member.id && (
+              <span className="text-primary">✓</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderDatePopoverContent = () => (
+    <div>
+      <h4 className="text-center font-semibold text-sm mb-3">Dates</h4>
+      <label className="text-xs font-semibold uppercase text-text-muted mb-1 block">
+        Date d'échéance
+      </label>
+      <input
+        type="date"
+        className="w-full border border-slate-300 rounded-md p-2 text-sm mb-3"
+        value={selectedDate}
+        onChange={(e) => setSelectedDate(e.target.value)}
+      />
+      <button
+        onClick={handleDateSave}
+        className="w-full bg-primary text-white py-2 rounded-md text-sm font-semibold mb-2"
+      >
+        Enregistrer
+      </button>
+      <button
+        onClick={handleDateRemove}
+        className="w-full bg-surface hover:bg-slate-300 text-sm font-medium py-2 rounded-md"
+      >
+        Supprimer
+      </button>
+    </div>
+  );
+
   return (
     <div
       className="fixed inset-0 bg-black/60 z-50 flex justify-center items-start p-4 sm:p-8 overflow-y-auto"
@@ -269,6 +382,34 @@ export default function CardModal({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-2 space-y-8">
+              <div className="flex gap-8">
+                {card.assignedUser && (
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase text-text-muted mb-2">
+                      Assigné à
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <Avatar user={card.assignedUser} />
+                      <p className="font-semibold">{card.assignedUser.name}</p>
+                    </div>
+                  </div>
+                )}
+                {card.deadline && (
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase text-text-muted mb-2">
+                      Date d'échéance
+                    </h3>
+                    <p className="font-semibold">
+                      {new Date(card.deadline).toLocaleDateString("fr-FR", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <DescriptionIcon />
@@ -361,19 +502,49 @@ export default function CardModal({
               <h3 className="text-xs font-semibold uppercase text-text-muted mb-2">
                 Ajouter à la carte
               </h3>
-              <div className="relative">
-                <button
-                  onClick={() => setIsLabelPopoverOpen(!isLabelPopoverOpen)}
-                  className="w-full bg-slate-200/80 hover:bg-slate-300 text-text font-medium py-2 px-3 rounded-lg flex items-center gap-2"
-                >
-                  <LabelIcon />
-                  <span>Étiquettes</span>
-                </button>
-                {isLabelPopoverOpen && (
-                  <div className="absolute z-10 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-slate-200 p-3">
-                    {renderLabelPopoverContent()}
-                  </div>
-                )}
+              <div className="space-y-2">
+                <div className="relative">
+                  <button
+                    onClick={() => setIsLabelPopoverOpen(!isLabelPopoverOpen)}
+                    className="w-full bg-slate-200/80 hover:bg-slate-300 text-text font-medium py-2 px-3 rounded-lg flex items-center gap-2"
+                  >
+                    <LabelIcon />
+                    <span>Étiquettes</span>
+                  </button>
+                  {isLabelPopoverOpen && (
+                    <div className="absolute z-10 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-slate-200 p-3">
+                      {renderLabelPopoverContent()}
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setIsMemberPopoverOpen(!isMemberPopoverOpen)}
+                    className="w-full bg-slate-200/80 hover:bg-slate-300 text-text font-medium py-2 px-3 rounded-lg flex items-center gap-2"
+                  >
+                    <MembersIcon />
+                    <span>Membres</span>
+                  </button>
+                  {isMemberPopoverOpen && (
+                    <div className="absolute z-10 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-slate-200 p-3">
+                      {renderMemberPopoverContent()}
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setIsDatePopoverOpen(!isDatePopoverOpen)}
+                    className="w-full bg-slate-200/80 hover:bg-slate-300 text-text font-medium py-2 px-3 rounded-lg flex items-center gap-2"
+                  >
+                    <DateIcon />
+                    <span>Dates</span>
+                  </button>
+                  {isDatePopoverOpen && (
+                    <div className="absolute z-10 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-slate-200 p-3">
+                      {renderDatePopoverContent()}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
