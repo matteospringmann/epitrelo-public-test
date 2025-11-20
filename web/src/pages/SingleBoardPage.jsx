@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   getBoardById,
@@ -23,10 +23,18 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { createPortal } from "react-dom";
+
+// --- Components ---
 import CardModal from "../components/CardModal";
 import ShareModal from "../components/ShareModal";
 import ThemeSelector from "../components/ThemeSelector";
+import ShortcutsModal from "../components/ShortcutsModal"; // Import du modal d'aide
 import Avatar from "../components/Avatar";
+
+// --- Hooks ---
+import useHotkeys from "../lib/useHotkeys"; // Import du custom hook
+
+// --- Libs ---
 import { themes } from "../lib/themes";
 
 const getDeadlineStyle = (deadline) => {
@@ -44,6 +52,7 @@ const getDeadlineStyle = (deadline) => {
 };
 
 function Card({ card, onDelete, onOpenModal }) {
+  // ... (Le composant Card reste inchangé)
   return (
     <div
       className="bg-white rounded-lg shadow-md border border-slate-200 group relative cursor-pointer hover:border-primary"
@@ -161,6 +170,7 @@ function Card({ card, onDelete, onOpenModal }) {
 }
 
 function SortableCard({ card, onDelete, onOpenModal }) {
+  // ... (Le composant SortableCard reste inchangé)
   const {
     attributes,
     listeners,
@@ -187,9 +197,18 @@ function SortableCard({ card, onDelete, onOpenModal }) {
   );
 }
 
-function AddCardForm({ onAdd }) {
+// --- MODIFICATION ---
+// Le formulaire est maintenant contrôlé par le parent via les props `isEditing` et `setIsEditing`
+function AddCardForm({ onAdd, isEditing, setIsEditing }) {
   const [title, setTitle] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (isEditing) {
+      textareaRef.current?.focus();
+    }
+  }, [isEditing]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -200,6 +219,7 @@ function AddCardForm({ onAdd }) {
     setTitle("");
     setIsEditing(false);
   };
+
   if (!isEditing) {
     return (
       <button
@@ -210,14 +230,15 @@ function AddCardForm({ onAdd }) {
       </button>
     );
   }
+
   return (
     <form onSubmit={handleSubmit}>
       <textarea
+        ref={textareaRef}
         className="w-full border-slate-300 rounded-lg p-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-light"
         placeholder="Saisissez un titre pour cette carte..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        autoFocus
         onBlur={handleSubmit}
       />
       <div className="flex items-center gap-2 mt-2">
@@ -239,7 +260,16 @@ function AddCardForm({ onAdd }) {
   );
 }
 
-function ListContainer({ list, onAddCard, onDeleteCard, onOpenModal }) {
+// --- MODIFICATION ---
+// Le composant reçoit maintenant les props pour gérer l'état d'édition du formulaire de carte
+function ListContainer({
+  list,
+  onAddCard,
+  onDeleteCard,
+  onOpenModal,
+  isCardEditing,
+  setIsCardEditing,
+}) {
   const { setNodeRef } = useSortable({ id: list.id, data: { type: "list" } });
   return (
     <div
@@ -262,7 +292,11 @@ function ListContainer({ list, onAddCard, onDeleteCard, onOpenModal }) {
           ))}
         </div>
       </SortableContext>
-      <AddCardForm onAdd={(title) => onAddCard(list.id, title)} />
+      <AddCardForm
+        onAdd={(title) => onAddCard(list.id, title)}
+        isEditing={isCardEditing}
+        setIsEditing={setIsCardEditing}
+      />
     </div>
   );
 }
@@ -279,6 +313,32 @@ export default function SingleBoardPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
+
+  // --- NOUVEAUX ÉTATS ET REFS POUR LES RACCOURCIS ---
+  const newListInputRef = useRef(null);
+  const [hoveredListId, setHoveredListId] = useState(null);
+  const [editingCardInList, setEditingCardInList] = useState(null);
+  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
+
+  // --- DÉFINITION DES CALLBACKS POUR LES RACCOURCIS ---
+  const handleCreateListShortcut = useCallback(() => {
+    newListInputRef.current?.focus();
+  }, []);
+
+  const handleCreateCardShortcut = useCallback(() => {
+    if (hoveredListId) {
+      setEditingCardInList(hoveredListId);
+    }
+  }, [hoveredListId]);
+
+  const toggleShortcutsModal = useCallback(() => {
+    setIsShortcutsModalOpen((prev) => !prev);
+  }, []);
+
+  // --- UTILISATION DU HOOK useHotkeys ---
+  useHotkeys("n", handleCreateListShortcut);
+  useHotkeys("c", handleCreateCardShortcut, [hoveredListId]);
+  useHotkeys("?", toggleShortcutsModal);
 
   const fetchBoard = () => {
     if (boardId) {
@@ -454,13 +514,22 @@ export default function SingleBoardPage() {
         </header>
         <div className="flex gap-6 overflow-x-auto pb-4 items-start">
           {lists.map((list) => (
-            <ListContainer
+            <div
               key={list.id}
-              list={list}
-              onAddCard={handleAddCard}
-              onDeleteCard={handleDeleteCard}
-              onOpenModal={handleOpenModal}
-            />
+              onMouseEnter={() => setHoveredListId(list.id)}
+              onMouseLeave={() => setHoveredListId(null)}
+            >
+              <ListContainer
+                list={list}
+                onAddCard={handleAddCard}
+                onDeleteCard={handleDeleteCard}
+                onOpenModal={handleOpenModal}
+                isCardEditing={editingCardInList === list.id}
+                setIsCardEditing={(isEditing) =>
+                  setEditingCardInList(isEditing ? list.id : null)
+                }
+              />
+            </div>
           ))}
           <div className="w-72 flex-shrink-0">
             <form
@@ -468,6 +537,7 @@ export default function SingleBoardPage() {
               className="bg-slate-200/60 backdrop-blur-sm rounded-xl p-3"
             >
               <input
+                ref={newListInputRef}
                 className="w-full border-none bg-transparent rounded-lg p-2 mb-2 placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-light focus:bg-white"
                 placeholder="+ Ajouter une liste"
                 value={newListTitle}
@@ -509,6 +579,11 @@ export default function SingleBoardPage() {
             onSelectTheme={handleThemeChange}
             onClose={() => setIsThemeSelectorOpen(false)}
           />,
+          document.body,
+        )}
+      {isShortcutsModalOpen &&
+        createPortal(
+          <ShortcutsModal onClose={() => setIsShortcutsModalOpen(false)} />,
           document.body,
         )}
       {createPortal(
