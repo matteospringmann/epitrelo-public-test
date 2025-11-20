@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { sendAssignmentNotification } from "../services/emailService.js";
 const prisma = new PrismaClient();
 
 const checkCardAccess = (cardId, userId) => {
@@ -55,27 +56,38 @@ export async function createCard(req, res) {
 
 export async function updateCard(req, res) {
   const { id } = req.params;
-  const { deadline, ...dataToUpdate } = req.body;
+  const { deadline, assignedUserId, ...dataToUpdate } = req.body;
 
   if (deadline !== undefined) {
     dataToUpdate.deadline = deadline ? new Date(deadline) : null;
   }
+  if (assignedUserId !== undefined) {
+    dataToUpdate.assignedUserId = assignedUserId;
+  }
 
   try {
-    const cardToUpdate = await checkCardAccess(id, req.user.id);
-    if (!cardToUpdate) {
-      return res
-        .status(404)
-        .json({ error: "Carte non trouvée ou accès non autorisé" });
+    // 1. Récupérer l'état actuel de la carte AVANT la mise à jour
+    const cardBeforeUpdate = await prisma.card.findUnique({
+      where: { id: Number(id) },
+      select: {
+        assignedUserId: true,
+        list: { select: { board: true } }, // On récupère le board pour le nom
+      },
+    });
+
+    if (!cardBeforeUpdate) {
+      return res.status(404).json({ error: "Carte non trouvée." });
     }
 
+    // 2. Mettre à jour la carte
     const updatedCard = await prisma.card.update({
       where: { id: Number(id) },
       data: dataToUpdate,
       include: {
         labels: true,
         assignedUser: {
-          select: { id: true, name: true, avatarUrl: true },
+          // S'assurer d'inclure les infos de l'utilisateur assigné
+          select: { id: true, name: true, email: true, avatarUrl: true },
         },
         comments: {
           include: {
@@ -85,8 +97,20 @@ export async function updateCard(req, res) {
         },
       },
     });
+
+    // 3. Logique de notification
+    const oldAssignedId = cardBeforeUpdate.assignedUserId;
+    const newAssignedUser = updatedCard.assignedUser;
+
+    if (newAssignedUser && newAssignedUser.id !== oldAssignedId) {
+      // Un nouvel utilisateur a été assigné (ou un utilisateur a été assigné là où il n'y en avait pas)
+      const board = cardBeforeUpdate.list.board;
+      sendAssignmentNotification(newAssignedUser, updatedCard, board);
+    }
+
     res.json(updatedCard);
   } catch (error) {
+    console.error("Erreur lors de la mise à jour de la carte:", error);
     res
       .status(500)
       .json({ error: "Erreur lors de la mise à jour de la carte" });
