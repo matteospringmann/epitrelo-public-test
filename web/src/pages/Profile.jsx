@@ -72,16 +72,16 @@ export default function Profile() {
   };
 
   if (!user) {
-    return <div className="p-8 text-center">Chargement...</div>;
+    return <div className="p-8 text-center dark:text-slate-300">Chargement...</div>;
   }
 
   return (
-    <div className="bg-background min-h-screen p-4 sm:p-6 lg:p-8">
+    <div className="bg-background dark:bg-slate-900 min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         {/* --- Section Avatar et Infos Principales --- */}
-        <div className="bg-white rounded-xl shadow-md border border-slate-200 p-8 flex flex-col sm:flex-row items-center gap-8">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-8 flex flex-col sm:flex-row items-center gap-8">
           <div className="relative">
-            <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center text-primary text-5xl font-bold">
+            <div className="w-32 h-32 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary text-5xl font-bold">
               {user.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
@@ -103,7 +103,7 @@ export default function Profile() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
                   autoFocus
                 />
                 <button
@@ -115,7 +115,7 @@ export default function Profile() {
               </form>
             ) : (
               <div className="flex items-center gap-4">
-                <h1 className="text-3xl font-extrabold text-text">
+                <h1 className="text-3xl font-extrabold text-text dark:text-slate-100">
                   {user.name}
                 </h1>
                 <button
@@ -124,7 +124,7 @@ export default function Profile() {
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-text-muted hover:text-primary"
+                    className="h-5 w-5 text-text-muted dark:text-slate-400 hover:text-primary"
                     viewBox="0 0 20 20"
                     fill="currentColor"
                   >
@@ -138,8 +138,8 @@ export default function Profile() {
                 </button>
               </div>
             )}
-            <p className="text-text-muted mt-1">{user.email}</p>
-            <p className="text-sm text-text-muted mt-2">
+            <p className="text-text-muted dark:text-slate-400 mt-1">{user.email}</p>
+            <p className="text-sm text-text-muted dark:text-slate-400 mt-2">
               Membre depuis le{" "}
               {new Date(user.createdAt).toLocaleDateString("fr-FR")}
             </p>
@@ -148,22 +148,22 @@ export default function Profile() {
 
         {/* --- Section Statistiques --- */}
         <div className="mt-8">
-          <h2 className="text-xl font-bold text-text mb-4">Votre Activité</h2>
+          <h2 className="text-xl font-bold text-text dark:text-slate-100 mb-4">Votre Activité</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
-              <h3 className="font-semibold text-text-muted">Projets</h3>
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
+              <h3 className="font-semibold text-text-muted dark:text-slate-400">Projets</h3>
               <p className="text-4xl font-extrabold text-primary mt-2">
                 {stats.boardCount}
               </p>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
-              <h3 className="font-semibold text-text-muted">Listes</h3>
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
+              <h3 className="font-semibold text-text-muted dark:text-slate-400">Listes</h3>
               <p className="text-4xl font-extrabold text-primary mt-2">
                 {stats.listCount}
               </p>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
-              <h3 className="font-semibold text-text-muted">Tâches</h3>
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
+              <h3 className="font-semibold text-text-muted dark:text-slate-400">Tâches</h3>
               <p className="text-4xl font-extrabold text-primary mt-2">
                 {stats.cardCount}
               </p>
@@ -173,14 +173,14 @@ export default function Profile() {
 
         {/* --- Zone de Danger --- */}
         <div className="mt-8">
-          <h2 className="text-xl font-bold text-red-600 mb-4">
+          <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-4">
             Zone de Danger
           </h2>
-          <div className="bg-white p-6 rounded-xl shadow-md border border-red-200">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border border-red-200 dark:border-red-900">
             <div className="flex flex-col sm:flex-row justify-between items-center">
               <div>
-                <h3 className="font-bold text-text">Supprimer le compte</h3>
-                <p className="text-sm text-text-muted mt-1">
+                <h3 className="font-bold text-text dark:text-slate-100">Supprimer le compte</h3>
+                <p className="text-sm text-text-muted dark:text-slate-400 mt-1">
                   Cette action est irréversible et supprimera toutes vos
                   données.
                 </p>

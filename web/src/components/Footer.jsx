@@ -5,7 +5,7 @@ export default function Footer() {
     const currentYear = new Date().getFullYear();
 
     return (
-        <footer className="bg-surface border-t border-slate-200">
+        <footer className="bg-surface dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
             <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
                 <div className="xl:grid xl:grid-cols-3 xl:gap-8">
                     <div className="space-y-8 xl:col-span-1">
@@ -20,21 +20,21 @@ export default function Footer() {
                             />
                             EpiTrello
                         </Link>
-                        <p className="text-text-muted text-base">
+                        <p className="text-text-muted dark:text-slate-400 text-base">
                             Organize your work, effortlessly.
                         </p>
                     </div>
                     <div className="mt-12 grid grid-cols-2 gap-8 xl:mt-0 xl:col-span-2">
                         <div className="md:grid md:grid-cols-2 md:gap-8">
                             <div>
-                                <h3 className="text-sm font-semibold text-text tracking-wider uppercase">
+                                <h3 className="text-sm font-semibold text-text dark:text-slate-200 tracking-wider uppercase">
                                     Product
                                 </h3>
                                 <ul className="mt-4 space-y-4">
                                     <li>
                                         <Link
                                             to="/boards"
-                                            className="text-base text-text-muted hover:text-primary"
+                                            className="text-base text-text-muted dark:text-slate-400 hover:text-primary dark:hover:text-primary"
                                         >
                                             Boards
                                         </Link>
@@ -42,7 +42,7 @@ export default function Footer() {
                                     <li>
                                         <a
                                             href="#"
-                                            className="text-base text-text-muted hover:text-primary"
+                                            className="text-base text-text-muted dark:text-slate-400 hover:text-primary dark:hover:text-primary"
                                         >
                                             Features
                                         </a>
@@ -50,14 +50,14 @@ export default function Footer() {
                                 </ul>
                             </div>
                             <div className="mt-12 md:mt-0">
-                                <h3 className="text-sm font-semibold text-text tracking-wider uppercase">
+                                <h3 className="text-sm font-semibold text-text dark:text-slate-200 tracking-wider uppercase">
                                     About
                                 </h3>
                                 <ul className="mt-4 space-y-4">
                                     <li>
                                         <a
                                             href="#"
-                                            className="text-base text-text-muted hover:text-primary"
+                                            className="text-base text-text-muted dark:text-slate-400 hover:text-primary dark:hover:text-primary"
                                         >
                                             About Us
                                         </a>
@@ -65,7 +65,7 @@ export default function Footer() {
                                     <li>
                                         <a
                                             href="#"
-                                            className="text-base text-text-muted hover:text-primary"
+                                            className="text-base text-text-muted dark:text-slate-400 hover:text-primary dark:hover:text-primary"
                                         >
                                             Contact
                                         </a>
@@ -75,14 +75,14 @@ export default function Footer() {
                         </div>
                         <div className="md:grid md:grid-cols-1 md:gap-8">
                             <div>
-                                <h3 className="text-sm font-semibold text-text tracking-wider uppercase">
+                                <h3 className="text-sm font-semibold text-text dark:text-slate-200 tracking-wider uppercase">
                                     Legal
                                 </h3>
                                 <ul className="mt-4 space-y-4">
                                     <li>
                                         <a
                                             href="#"
-                                            className="text-base text-text-muted hover:text-primary"
+                                            className="text-base text-text-muted dark:text-slate-400 hover:text-primary dark:hover:text-primary"
                                         >
                                             Privacy
                                         </a>
@@ -90,7 +90,7 @@ export default function Footer() {
                                     <li>
                                         <a
                                             href="#"
-                                            className="text-base text-text-muted hover:text-primary"
+                                            className="text-base text-text-muted dark:text-slate-400 hover:text-primary dark:hover:text-primary"
                                         >
                                             Terms
                                         </a>
@@ -100,8 +100,8 @@ export default function Footer() {
                         </div>
                     </div>
                 </div>
-                <div className="mt-12 border-t border-slate-200 pt-8">
-                    <p className="text-base text-text-muted text-center">
+                <div className="mt-12 border-t border-slate-200 dark:border-slate-700 pt-8">
+                    <p className="text-base text-text-muted dark:text-slate-400 text-center">
                         &copy; {currentYear} EpiTrello. Project by Mattéo
                         Springmann.
                     </p>
