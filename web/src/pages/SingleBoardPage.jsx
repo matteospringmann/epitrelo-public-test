@@ -7,6 +7,10 @@ import {
   deleteCard,
   updateCard,
   updateBoard,
+  addBoardToFavorites,
+  removeBoardFromFavorites,
+  updateList,
+  deleteList,
 } from "../lib/api";
 import {
   DndContext,
@@ -28,11 +32,12 @@ import { createPortal } from "react-dom";
 import CardModal from "../components/CardModal";
 import ShareModal from "../components/ShareModal";
 import ThemeSelector from "../components/ThemeSelector";
-import ShortcutsModal from "../components/ShortcutsModal"; // Import du modal d'aide
+import ShortcutsModal from "../components/ShortcutsModal";
 import Avatar from "../components/Avatar";
+import FavoriteButton from "../components/FavoriteButton";
 
 // --- Hooks ---
-import useHotkeys from "../lib/useHotkeys"; // Import du custom hook
+import useHotkeys from "../lib/useHotkeys";
 
 // --- Libs ---
 import { themes } from "../lib/themes";
@@ -46,41 +51,64 @@ const getDeadlineStyle = (deadline) => {
   const diffTime = deadlineDate - now;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) return "bg-red-100 text-red-800";
-  if (diffDays <= 2) return "bg-yellow-100 text-yellow-800";
-  return "bg-slate-100 text-slate-600";
+  if (diffDays < 0) return "bg-red-500/90 text-white";
+  if (diffDays <= 2) return "bg-amber-500/90 text-white";
+  return "bg-emerald-500/90 text-white";
 };
 
+// Composant Card modernisé
 function Card({ card, onDelete, onOpenModal }) {
-  // ... (Le composant Card reste inchangé)
   return (
     <div
-      className="bg-white rounded-lg shadow-md border border-slate-200 group relative cursor-pointer hover:border-primary"
+      className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-slate-200/60 hover:border-primary/40 transition-all duration-200 cursor-pointer transform hover:-translate-y-0.5"
       onClick={onOpenModal}
     >
-      <div className="p-3">
-        <div className="flex flex-wrap gap-1 mb-2">
-          {card.labels?.map((label) => (
-            <div
-              key={label.id}
-              className="h-2 w-10 rounded-full"
-              style={{ backgroundColor: label.color }}
-              title={label.name}
-            ></div>
-          ))}
+      {/* Image de couverture si présente */}
+      {card.coverUrl && (
+        <div className="h-32 w-full rounded-t-xl overflow-hidden">
+          <img
+            src={card.coverUrl}
+            alt=""
+            className="w-full h-full object-cover"
+          />
         </div>
-        <p className="font-semibold text-text">{card.title}</p>
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-3">
+      )}
+
+      <div className="p-4">
+        {/* Labels */}
+        {card.labels?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {card.labels.map((label) => (
+              <span
+                key={label.id}
+                className="px-2.5 py-1 rounded-md text-xs font-semibold text-white shadow-sm"
+                style={{ backgroundColor: label.color }}
+                title={label.name}
+              >
+                {label.name}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Titre */}
+        <h3 className="font-semibold text-text mb-3 line-clamp-3 group-hover:text-primary transition-colors">
+          {card.title}
+        </h3>
+
+        {/* Métadonnées */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Description indicator */}
             {card.content && (
               <div
-                className="text-xs text-text-muted flex items-center gap-1"
+                className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md"
                 title="Cette carte a une description"
               >
                 <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 24 24"
+                  className="w-3.5 h-3.5"
                   fill="none"
+                  viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
                   <path
@@ -92,13 +120,15 @@ function Card({ card, onDelete, onOpenModal }) {
                 </svg>
               </div>
             )}
+
+            {/* Commentaires */}
             {card.comments?.length > 0 && (
               <div
-                className="text-xs text-text-muted flex items-center gap-1"
+                className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md"
                 title={`${card.comments.length} commentaire(s)`}
               >
                 <svg
-                  className="h-4 w-4"
+                  className="w-3.5 h-3.5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -110,15 +140,19 @@ function Card({ card, onDelete, onOpenModal }) {
                     d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                   />
                 </svg>
-                {card.comments.length}
+                <span className="font-medium">{card.comments.length}</span>
               </div>
             )}
+
+            {/* Deadline */}
             {card.deadline && (
               <div
-                className={`text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${getDeadlineStyle(card.deadline)}`}
+                className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-md shadow-sm ${getDeadlineStyle(
+                  card.deadline
+                )}`}
               >
                 <svg
-                  className="w-3 h-3"
+                  className="w-3.5 h-3.5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -137,22 +171,35 @@ function Card({ card, onDelete, onOpenModal }) {
               </div>
             )}
           </div>
+
+          {/* Avatar utilisateur assigné */}
           {card.assignedUser && (
-            <Avatar user={card.assignedUser} className="w-6 h-6" />
+            <div className="relative group/avatar">
+              <Avatar
+                user={card.assignedUser}
+                className="w-7 h-7 ring-2 ring-white shadow-sm"
+              />
+              <div className="absolute bottom-full right-0 mb-2 hidden group-hover/avatar:block z-10">
+                <div className="bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                  {card.assignedUser.name}
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Bouton delete avec meilleur positionnement */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           onDelete();
         }}
-        className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 transition-all z-10"
+        className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm text-slate-500 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all shadow-md"
         title="Supprimer la carte"
       >
         <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4"
+          className="w-4 h-4"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -170,19 +217,12 @@ function Card({ card, onDelete, onOpenModal }) {
 }
 
 function SortableCard({ card, onDelete, onOpenModal }) {
-  // ... (Le composant SortableCard reste inchangé)
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: card.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: card.id });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.3 : 1,
+    opacity: isDragging ? 0.5 : 1,
   };
   return (
     <div
@@ -197,8 +237,7 @@ function SortableCard({ card, onDelete, onOpenModal }) {
   );
 }
 
-// --- MODIFICATION ---
-// Le formulaire est maintenant contrôlé par le parent via les props `isEditing` et `setIsEditing`
+// Composant AddCardForm modernisé
 function AddCardForm({ onAdd, isEditing, setIsEditing }) {
   const [title, setTitle] = useState("");
   const textareaRef = useRef(null);
@@ -224,26 +263,40 @@ function AddCardForm({ onAdd, isEditing, setIsEditing }) {
     return (
       <button
         onClick={() => setIsEditing(true)}
-        className="w-full text-left text-sm p-2 rounded-lg text-text-muted hover:bg-slate-200 transition-colors"
+        className="w-full text-left text-sm px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-200/60 hover:text-text transition-all flex items-center gap-2 group"
       >
-        + Ajouter une carte
+        <svg
+          className="w-4 h-4 group-hover:scale-110 transition-transform"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+        <span>Ajouter une carte</span>
       </button>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-2">
       <textarea
         ref={textareaRef}
-        className="w-full border-slate-300 rounded-lg p-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-light"
+        className="w-full border-2 border-primary/20 focus:border-primary rounded-xl p-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none bg-white"
         placeholder="Saisissez un titre pour cette carte..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onBlur={handleSubmit}
+        rows={3}
       />
-      <div className="flex items-center gap-2 mt-2">
+      <div className="flex items-center gap-2">
         <button
-          className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark transition"
+          className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-semibold rounded-lg hover:shadow-md transition-all"
           type="submit"
         >
           Ajouter
@@ -251,17 +304,165 @@ function AddCardForm({ onAdd, isEditing, setIsEditing }) {
         <button
           onClick={() => setIsEditing(false)}
           type="button"
-          className="text-2xl text-text-muted hover:text-text"
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-500 hover:text-text transition-colors"
         >
-          &times;
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
         </button>
       </div>
     </form>
   );
 }
 
-// --- MODIFICATION ---
-// Le composant reçoit maintenant les props pour gérer l'état d'édition du formulaire de carte
+// Composant EditableListTitle modernisé
+function EditableListTitle({ list, onUpdate, onDelete }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState(list.title);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSave = async () => {
+    if (!title.trim()) {
+      setTitle(list.title);
+      setIsEditing(false);
+      return;
+    }
+    if (title.trim() !== list.title) {
+      await onUpdate({ ...list, title: title.trim() });
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSave();
+    } else if (e.key === "Escape") {
+      setTitle(list.title);
+      setIsEditing(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onBlur={handleSave}
+        onKeyDown={handleKeyDown}
+        className="font-bold text-lg mb-3 text-text px-2 py-1 bg-white border-2 border-primary rounded-lg focus:outline-none w-full shadow-sm"
+        autoFocus
+        maxLength={50}
+      />
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between mb-3 group/header">
+      <h2
+        onClick={() => setIsEditing(true)}
+        className="font-bold text-lg text-text px-2 py-1 cursor-pointer hover:bg-slate-200/60 rounded-lg transition-colors flex-1"
+        title="Cliquer pour modifier"
+      >
+        {list.title}
+      </h2>
+      <div className="relative" ref={menuRef}>
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200/60 text-slate-500 hover:text-text opacity-0 group-hover/header:opacity-100 transition-all"
+          title="Actions de la liste"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+            />
+          </svg>
+        </button>
+        {isMenuOpen && (
+          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-20">
+            <button
+              onClick={() => {
+                setIsEditing(true);
+                setIsMenuOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-slate-100 text-sm flex items-center gap-2"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
+              Renommer
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm("Supprimer cette liste et toutes ses cartes ?")) {
+                  onDelete(list.id);
+                }
+                setIsMenuOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 text-sm flex items-center gap-2"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+              Supprimer la liste
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Composant ListContainer modernisé
 function ListContainer({
   list,
   onAddCard,
@@ -269,19 +470,26 @@ function ListContainer({
   onOpenModal,
   isCardEditing,
   setIsCardEditing,
+  onUpdateList,
+  onDeleteList,
 }) {
   const { setNodeRef } = useSortable({ id: list.id, data: { type: "list" } });
+  const cardCount = list.cards?.length || 0;
+
   return (
     <div
       ref={setNodeRef}
-      className="bg-surface/80 backdrop-blur-sm rounded-xl p-3 w-72 flex-shrink-0 flex flex-col"
+      className="bg-slate-100/80 backdrop-blur-sm rounded-2xl p-4 w-80 flex-shrink-0 flex flex-col shadow-md hover:shadow-lg transition-shadow border border-slate-200/60"
     >
-      <h2 className="font-bold text-lg mb-4 text-text px-1">{list.title}</h2>
-      <SortableContext
-        items={list.cards.map((c) => c.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className="flex-1 space-y-3 mb-3 min-h-[40px] overflow-y-auto pr-1">
+      <EditableListTitle list={list} onUpdate={onUpdateList} onDelete={onDeleteList} />
+
+      {/* Compteur de cartes */}
+      <div className="text-xs text-slate-500 mb-3 px-2">
+        {cardCount} {cardCount > 1 ? 'cartes' : 'carte'}
+      </div>
+
+      <SortableContext items={list.cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+        <div className="flex-1 space-y-3 mb-3 min-h-[60px] max-h-[calc(100vh-300px)] overflow-y-auto pr-1 custom-scrollbar">
           {list.cards.map((card) => (
             <SortableCard
               key={card.id}
@@ -292,6 +500,7 @@ function ListContainer({
           ))}
         </div>
       </SortableContext>
+
       <AddCardForm
         onAdd={(title) => onAddCard(list.id, title)}
         isEditing={isCardEditing}
@@ -310,17 +519,13 @@ export default function SingleBoardPage() {
   const [selectedCard, setSelectedCard] = useState(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
-  // --- NOUVEAUX ÉTATS ET REFS POUR LES RACCOURCIS ---
   const newListInputRef = useRef(null);
   const [hoveredListId, setHoveredListId] = useState(null);
   const [editingCardInList, setEditingCardInList] = useState(null);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
 
-  // --- DÉFINITION DES CALLBACKS POUR LES RACCOURCIS ---
   const handleCreateListShortcut = useCallback(() => {
     newListInputRef.current?.focus();
   }, []);
@@ -335,7 +540,6 @@ export default function SingleBoardPage() {
     setIsShortcutsModalOpen((prev) => !prev);
   }, []);
 
-  // --- UTILISATION DU HOOK useHotkeys ---
   useHotkeys("n", handleCreateListShortcut);
   useHotkeys("c", handleCreateCardShortcut, [hoveredListId]);
   useHotkeys("?", toggleShortcutsModal);
@@ -350,6 +554,7 @@ export default function SingleBoardPage() {
         .catch(console.error);
     }
   };
+
   useEffect(() => {
     fetchBoard();
   }, [boardId]);
@@ -361,10 +566,8 @@ export default function SingleBoardPage() {
     setLists((currentLists) =>
       currentLists.map((list) => ({
         ...list,
-        cards: list.cards.map((card) =>
-          card.id === updatedCard.id ? updatedCard : card,
-        ),
-      })),
+        cards: list.cards.map((card) => (card.id === updatedCard.id ? updatedCard : card)),
+      }))
     );
     if (selectedCard && selectedCard.id === updatedCard.id) {
       setSelectedCard(updatedCard);
@@ -380,46 +583,45 @@ export default function SingleBoardPage() {
   async function handleAddList(e) {
     e.preventDefault();
     if (!newListTitle.trim()) return;
-    const newList = await createList({
-      title: newListTitle,
-      boardId: Number(boardId),
-    });
+    const newList = await createList({ title: newListTitle, boardId: Number(boardId) });
     setLists((current) => [...current, { ...newList, cards: [] }]);
     setNewListTitle("");
   }
+
   async function handleAddCard(listId, cardTitle) {
     if (!cardTitle.trim()) return;
     const newCard = await createCard({ title: cardTitle, listId });
     setLists((current) =>
-      current.map((list) =>
-        list.id === listId
-          ? { ...list, cards: [...list.cards, newCard] }
-          : list,
-      ),
+      current.map((list) => (list.id === listId ? { ...list, cards: [...list.cards, newCard] } : list))
     );
   }
+
   async function handleDeleteCard(listId, cardId) {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette carte ?")) {
       await deleteCard(cardId);
       setLists((current) =>
-        current.map((list) =>
-          list.id === listId
-            ? { ...list, cards: list.cards.filter((c) => c.id !== cardId) }
-            : list,
-        ),
+        current.map((list) => (list.id === listId ? { ...list, cards: list.cards.filter((c) => c.id !== cardId) } : list))
       );
     }
   }
+
+  const handleUpdateList = async (updatedList) => {
+    await updateList(updatedList.id, { title: updatedList.title });
+    setLists((currentLists) => currentLists.map((list) => (list.id === updatedList.id ? updatedList : list)));
+  };
+
+  const handleDeleteList = async (listId) => {
+    await deleteList(listId);
+    setLists((currentLists) => currentLists.filter((list) => list.id !== listId));
+  };
+
   function findListForCard(cardId, currentLists) {
-    return currentLists.find((list) =>
-      list.cards.some((card) => card.id === cardId),
-    );
+    return currentLists.find((list) => list.cards.some((card) => card.id === cardId));
   }
+
   function handleDragStart(event) {
     const { active } = event;
-    const card = lists
-      .flatMap((list) => list.cards)
-      .find((c) => c.id === active.id);
+    const card = lists.flatMap((list) => list.cards).find((c) => c.id === active.id);
     if (card) {
       setActiveCard(card);
     }
@@ -432,34 +634,24 @@ export default function SingleBoardPage() {
     const activeId = active.id;
     const overId = over.id;
     if (activeId === overId) return;
+
     setLists((currentLists) => {
       const activeList = findListForCard(activeId, currentLists);
-      const overList = currentLists.find(
-        (list) =>
-          list.id === overId || list.cards.some((card) => card.id === overId),
-      );
+      const overList = currentLists.find((list) => list.id === overId || list.cards.some((card) => card.id === overId));
       if (!activeList || !overList) return currentLists;
+
       if (activeList.id === overList.id) {
         const oldIndex = activeList.cards.findIndex((c) => c.id === activeId);
         const newIndex = overList.cards.findIndex((c) => c.id === overId);
         return currentLists.map((list) =>
-          list.id === activeList.id
-            ? { ...list, cards: arrayMove(list.cards, oldIndex, newIndex) }
-            : list,
+          list.id === activeList.id ? { ...list, cards: arrayMove(list.cards, oldIndex, newIndex) } : list
         );
       } else {
         const newLists = [...currentLists];
-        const activeListIndex = newLists.findIndex(
-          (l) => l.id === activeList.id,
-        );
+        const activeListIndex = newLists.findIndex((l) => l.id === activeList.id);
         const overListIndex = newLists.findIndex((l) => l.id === overList.id);
-        const activeCardIndex = activeList.cards.findIndex(
-          (c) => c.id === activeId,
-        );
-        const [movedCard] = newLists[activeListIndex].cards.splice(
-          activeCardIndex,
-          1,
-        );
+        const activeCardIndex = activeList.cards.findIndex((c) => c.id === activeId);
+        const [movedCard] = newLists[activeListIndex].cards.splice(activeCardIndex, 1);
         let overCardIndex = overList.cards.findIndex((c) => c.id === overId);
         if (overCardIndex === -1) {
           overCardIndex = overList.cards.length;
@@ -471,133 +663,162 @@ export default function SingleBoardPage() {
     });
   }
 
-  const themeClassName =
-    themes.find((t) => t.id === board?.background)?.className ||
-    "bg-background";
+  const handleToggleFavorite = async () => {
+    try {
+      if (board.isFavorite) {
+        await removeBoardFromFavorites(board.id);
+      } else {
+        await addBoardToFavorites(board.id);
+      }
+      setBoard((prev) => ({ ...prev, isFavorite: !prev.isFavorite }));
+    } catch (error) {
+      console.error("Erreur lors de la modification des favoris:", error);
+    }
+  };
+
+  const themeClassName = themes.find((t) => t.id === board?.background)?.className || "bg-background";
 
   if (!board) {
-    return <div className="p-8 text-center text-text-muted">Chargement...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-text-muted">Chargement...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div
-        className={`p-4 sm:p-6 lg:p-8 min-h-screen transition-colors duration-500 ${themeClassName}`}
-      >
-        <header className="mb-8 flex justify-between items-center">
-          <div>
-            <Link to="/boards" className="text-sm text-primary hover:underline">
-              &larr; Retour aux projets
-            </Link>
-            <h1 className="text-3xl font-extrabold text-text mt-2">
-              {board.title}
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsThemeSelectorOpen(true)}
-              className="px-4 py-2 bg-black/10 text-text font-semibold rounded-lg shadow-md hover:bg-black/20 backdrop-blur-sm transition"
-            >
-              Thème
-            </button>
-            <button
-              onClick={() => setIsShareModalOpen(true)}
-              className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-dark transition"
-            >
-              Partager
-            </button>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className={`min-h-screen transition-colors duration-500 ${themeClassName}`}>
+        {/* Header avec design amélioré */}
+        <header className="bg-white/80 backdrop-blur-lg border-b border-slate-200/60 sticky top-0 z-30 shadow-sm">
+          <div className="max-w-[1920px] mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Link
+                  to="/boards"
+                  className="flex items-center gap-2 text-sm text-primary hover:text-primary-dark font-medium transition-colors group"
+                >
+                  <svg
+                    className="w-4 h-4 group-hover:-translate-x-1 transition-transform"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                  Retour
+                </Link>
+                <div className="w-px h-6 bg-slate-300"></div>
+                <h1 className="text-2xl font-extrabold text-text">{board.title}</h1>
+                <FavoriteButton isFavorite={board?.isFavorite} onToggle={handleToggleFavorite} size="lg" />
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsThemeSelectorOpen(true)}
+                  className="px-4 py-2 bg-white/50 hover:bg-white/80 text-text font-medium rounded-lg shadow-sm hover:shadow-md backdrop-blur-sm transition-all flex items-center gap-2 border border-slate-200/60"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                  </svg>
+                  Thème
+                </button>
+                <button
+                  onClick={() => setIsShareModalOpen(true)}
+                  className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  Partager
+                </button>
+                <button
+                  onClick={toggleShortcutsModal}
+                  className="w-10 h-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-lg shadow-sm hover:shadow-md backdrop-blur-sm transition-all border border-slate-200/60"
+                  title="Raccourcis clavier (?)"
+                >
+                  <svg className="w-5 h-5 text-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         </header>
-        <div className="flex gap-6 overflow-x-auto pb-4 items-start">
-          {lists.map((list) => (
-            <div
-              key={list.id}
-              onMouseEnter={() => setHoveredListId(list.id)}
-              onMouseLeave={() => setHoveredListId(null)}
-            >
-              <ListContainer
-                list={list}
-                onAddCard={handleAddCard}
-                onDeleteCard={handleDeleteCard}
-                onOpenModal={handleOpenModal}
-                isCardEditing={editingCardInList === list.id}
-                setIsCardEditing={(isEditing) =>
-                  setEditingCardInList(isEditing ? list.id : null)
-                }
-              />
-            </div>
-          ))}
-          <div className="w-72 flex-shrink-0">
-            <form
-              onSubmit={handleAddList}
-              className="bg-slate-200/60 backdrop-blur-sm rounded-xl p-3"
-            >
-              <input
-                ref={newListInputRef}
-                className="w-full border-none bg-transparent rounded-lg p-2 mb-2 placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-light focus:bg-white"
-                placeholder="+ Ajouter une liste"
-                value={newListTitle}
-                onChange={(e) => setNewListTitle(e.target.value)}
-              />
-              <button
-                className="w-full rounded-lg bg-primary/80 text-white py-2 font-semibold shadow hover:bg-primary transition disabled:opacity-50"
-                disabled={!newListTitle.trim()}
+
+        {/* Contenu principal */}
+        <div className="p-6 overflow-x-auto">
+          <div className="flex gap-6 pb-6 min-h-[calc(100vh-120px)] items-start">
+            {lists.map((list) => (
+              <div
+                key={list.id}
+                onMouseEnter={() => setHoveredListId(list.id)}
+                onMouseLeave={() => setHoveredListId(null)}
               >
-                Ajouter
-              </button>
-            </form>
+                <ListContainer
+                  list={list}
+                  onAddCard={handleAddCard}
+                  onDeleteCard={handleDeleteCard}
+                  onOpenModal={handleOpenModal}
+                  isCardEditing={editingCardInList === list.id}
+                  setIsCardEditing={(isEditing) => setEditingCardInList(isEditing ? list.id : null)}
+                  onUpdateList={handleUpdateList}
+                  onDeleteList={handleDeleteList}
+                />
+              </div>
+            ))}
+
+            {/* Formulaire ajout de liste modernisé */}
+            <div className="w-80 flex-shrink-0">
+              <form
+                onSubmit={handleAddList}
+                className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-md border border-slate-200/60 hover:shadow-lg transition-shadow"
+              >
+                <input
+                  ref={newListInputRef}
+                  className="w-full bg-white border-2 border-slate-200 focus:border-primary rounded-xl p-3 mb-3 placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+                  placeholder="+ Ajouter une liste"
+                  value={newListTitle}
+                  onChange={(e) => setNewListTitle(e.target.value)}
+                />
+                <button
+                  className="w-full rounded-lg bg-gradient-to-r from-primary to-primary-dark text-white py-3 font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!newListTitle.trim()}
+                >
+                  Ajouter
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
-      {selectedCard &&
-        createPortal(
-          <CardModal
-            card={selectedCard}
-            board={board}
-            onClose={handleCloseModal}
-            onCardUpdate={handleCardUpdate}
-            onBoardUpdate={fetchBoard}
-          />,
-          document.body,
-        )}
-      {isShareModalOpen &&
-        createPortal(
-          <ShareModal
-            board={board}
-            onClose={() => setIsShareModalOpen(false)}
-          />,
-          document.body,
-        )}
-      {isThemeSelectorOpen &&
-        createPortal(
-          <ThemeSelector
-            currentThemeId={board.background}
-            onSelectTheme={handleThemeChange}
-            onClose={() => setIsThemeSelectorOpen(false)}
-          />,
-          document.body,
-        )}
-      {isShortcutsModalOpen &&
-        createPortal(
-          <ShortcutsModal onClose={() => setIsShortcutsModalOpen(false)} />,
-          document.body,
-        )}
-      {createPortal(
-        <DragOverlay>
-          {activeCard ? (
-            <Card
-              card={activeCard}
-              onDelete={() => {}}
-              onOpenModal={() => {}}
-            />
-          ) : null}
-        </DragOverlay>,
-        document.body,
-      )}
+
+      {/* Modals */}
+      {selectedCard && createPortal(<CardModal card={selectedCard} board={board} onClose={handleCloseModal} onCardUpdate={handleCardUpdate} onBoardUpdate={fetchBoard} />, document.body)}
+      {isShareModalOpen && createPortal(<ShareModal board={board} onClose={() => setIsShareModalOpen(false)} />, document.body)}
+      {isThemeSelectorOpen && createPortal(<ThemeSelector currentThemeId={board.background} onSelectTheme={handleThemeChange} onClose={() => setIsThemeSelectorOpen(false)} />, document.body)}
+      {isShortcutsModalOpen && createPortal(<ShortcutsModal onClose={() => setIsShortcutsModalOpen(false)} />, document.body)}
+      {createPortal(<DragOverlay>{activeCard ? <Card card={activeCard} onDelete={() => {}} onOpenModal={() => {}} /> : null}</DragOverlay>, document.body)}
     </DndContext>
   );
 }

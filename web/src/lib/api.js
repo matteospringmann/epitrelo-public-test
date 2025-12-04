@@ -49,6 +49,15 @@ export async function createList(list) {
   return created;
 }
 
+export async function updateList(id, listData) {
+  const { data: updated } = await api.put(`/lists/${id}`, listData);
+  return updated;
+}
+
+export async function deleteList(id) {
+  await api.delete(`/lists/${id}`);
+}
+
 export async function createCard(card) {
   const { data: created } = await api.post("/cards", card);
   return created;
@@ -97,7 +106,9 @@ export async function deleteLabel(id) {
 }
 
 export async function assignLabelToCard(labelId, cardId) {
-  const { data: updated } = await api.post(`/labels/${labelId}/card/${cardId}`);
+  const { data: updated } = await api.post(
+    `/labels/${labelId}/card/${cardId}`,
+  );
   return updated;
 }
 
@@ -116,4 +127,17 @@ export async function createInvitationLink(boardId) {
 export async function acceptInvitation(token) {
   const { data } = await api.post(`/invitations/${token}/accept`);
   return data.boardId;
+}
+
+export async function addBoardToFavorites(boardId) {
+  await api.post(`/boards/${boardId}/favorite`);
+}
+
+export async function removeBoardFromFavorites(boardId) {
+  await api.delete(`/boards/${boardId}/favorite`);
+}
+
+export async function getFavoriteBoards() {
+  const { data } = await api.get("/boards/favorites");
+  return data;
 }
