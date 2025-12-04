@@ -13,6 +13,7 @@ import Protected from "./components/Protected.jsx";
 import BoardsList from "./pages/BoardsList.jsx";
 import SingleBoardPage from "./pages/SingleBoardPage.jsx";
 import AcceptInvitePage from "./pages/AcceptInvitePage.jsx";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
 
 const router = createBrowserRouter([
   {
@@ -29,8 +30,6 @@ const router = createBrowserRouter([
           </Protected>
         ),
       },
-
-      // Ces routes utilisent maintenant les composants qui viennent d'être importés
       {
         path: "/boards",
         element: (
@@ -47,20 +46,15 @@ const router = createBrowserRouter([
           </Protected>
         ),
       },
-      {
-        path: "/invite/:token",
-        element: (
-          <Protected>
-            <AcceptInvitePage />
-          </Protected>
-        ),
-      },
+      { path: "/invite/:token", element: <AcceptInvitePage /> },
     ],
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
   </React.StrictMode>,
 );

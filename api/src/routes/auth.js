@@ -1,8 +1,8 @@
-// api/src/routes/auth.js (Version Corrigée et Unifiée)
+// api/src/routes/auth.js
 
 import { Router } from "express";
 import passport from "passport";
-import jwt from "jsonwebtoken"; // <-- Importer JWT
+import jwt from "jsonwebtoken";
 import { register, login, me, logout } from "../controllers/authController.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -18,16 +18,12 @@ const setJwtCookie = (res, user) => {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
 
-router.post("/register", (req, res, next) => {
-  register(req, res, next);
-});
-
+router.post("/register", register);
 router.post("/login", login);
-
 router.get("/me", requireAuth, me);
 router.post("/logout", logout);
 

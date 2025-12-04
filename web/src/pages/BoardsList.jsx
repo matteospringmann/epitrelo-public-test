@@ -76,16 +76,16 @@ export default function BoardsList() {
   const regularBoards = boards.filter(b => !b.isFavorite);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Header modernisé avec gradient */}
-      <header className="bg-white/80 backdrop-blur-lg border-b border-slate-200/60 sticky top-0 z-10 shadow-sm">
+      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Mes Espaces de Travail
               </h1>
-              <p className="text-text-muted mt-1">
+              <p className="text-text-muted dark:text-slate-400 mt-1">
                 {boards.length} {boards.length > 1 ? 'projets' : 'projet'} • Organisez et collaborez
               </p>
             </div>

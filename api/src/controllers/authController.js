@@ -61,7 +61,11 @@ export async function login(req, res) {
 }
 
 export async function me(req, res) {
-  res.json({ user: req.user });
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: { id: true, name: true, email: true, avatarUrl: true, theme: true, createdAt: true },
+  });
+  res.json(user); // Retourne directement l'utilisateur, pas { user: ... }
 }
 export async function logout(_req, res) {
   res.clearCookie("token");

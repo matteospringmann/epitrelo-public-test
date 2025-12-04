@@ -8,7 +8,16 @@
         @apply scroll-smooth;
     }
     body {
-        @apply bg-background text-text font-sans antialiased;
+        @apply bg-background text-text font-sans antialiased transition-colors duration-300;
+    }
+    
+    /* Mode sombre */
+    .dark body {
+        @apply bg-slate-900 text-slate-100;
+    }
+    
+    .dark {
+        color-scheme: dark;
     }
 }
 
@@ -58,5 +67,14 @@
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(148, 163, 184, 0.5);
+  }
+  
+  /* Scrollbar dark mode */
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.5);
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.7);
   }
 }

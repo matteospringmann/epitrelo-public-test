@@ -24,6 +24,33 @@ export async function updateUserProfile(req, res) {
   }
 }
 
+// Mettre à jour le thème de l'utilisateur
+export async function updateUserTheme(req, res) {
+  const { theme } = req.body;
+
+  if (!theme || !["light", "dark"].includes(theme)) {
+    return res.status(400).json({ error: "Le thème doit être 'light' ou 'dark'" });
+  }
+
+  try {
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { theme },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatarUrl: true,
+        theme: true,
+        createdAt: true,
+      },
+    });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Erreur lors de la mise à jour du thème" });
+  }
+}
+
 // Récupérer les statistiques de l'utilisateur
 export async function getUserStats(req, res) {
   const userId = req.user.id;

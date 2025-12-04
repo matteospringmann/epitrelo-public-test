@@ -8,7 +8,7 @@ export const api = axios.create({
 export async function getMe() {
   try {
     const { data } = await api.get("/auth/me");
-    return data.user;
+    return data; // ✅ Correction ici
   } catch {
     return null;
   }
@@ -139,5 +139,10 @@ export async function removeBoardFromFavorites(boardId) {
 
 export async function getFavoriteBoards() {
   const { data } = await api.get("/boards/favorites");
+  return data;
+}
+
+export async function updateUserTheme(theme) {
+  const { data } = await api.put("/user/theme", { theme });
   return data;
 }

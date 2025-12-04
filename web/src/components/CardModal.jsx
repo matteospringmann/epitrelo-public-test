@@ -147,7 +147,7 @@ export default function CardModal({
   };
 
   const handleToggleLabel = async (labelId) => {
-    const isLabelOnCard = card.labels.some((l) => l.id === labelId);
+    const isLabelOnCard = (card.labels || []).some((l) => l.id === labelId);
     const updated = isLabelOnCard
       ? await removeLabelFromCard(labelId, card.id)
       : await assignLabelToCard(labelId, card.id);

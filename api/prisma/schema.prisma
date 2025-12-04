@@ -13,15 +13,16 @@ model User {
   email        String   @unique
   passwordHash String
   avatarUrl    String?
+  theme        String   @default("light") // Nouveau champ
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  cards          Card[]
-  lists          List[]
-  ownedBoards    Board[]   @relation("BoardOwner")
-  memberBoards   Board[]   @relation("BoardMembers")
-  favoriteBoards Board[]   @relation("UserFavorites") // Nouvelle relation
-  comments       Comment[]
+  cards        Card[]
+  lists        List[]
+  ownedBoards  Board[]  @relation("BoardOwner")
+  memberBoards Board[]  @relation("BoardMembers")
+  favoriteBoards Board[] @relation("UserFavorites")
+  comments     Comment[]
 }
 
 model Board {
@@ -35,7 +36,7 @@ model Board {
   ownerId Int
 
   members     User[]       @relation("BoardMembers")
-  favoritedBy User[]       @relation("UserFavorites") // Nouvelle relation
+  favoritedBy User[]       @relation("UserFavorites")
   lists       List[]
   labels      Label[]
   invitations Invitation[]
