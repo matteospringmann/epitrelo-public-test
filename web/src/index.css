@@ -78,3 +78,20 @@
     background: rgba(148, 163, 184, 0.7);
   }
 }
+
+/* Amélioration de la lisibilité sur les fonds d'image */
+[style*="background-image"] .list-container {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.dark [style*="background-image"] .list-container {
+  background: rgba(30, 41, 59, 0.95);
+}
+
+[style*="background-image"] .card-container {
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.dark [style*="background-image"] .card-container {
+  background: rgba(51, 65, 85, 0.98);
+}

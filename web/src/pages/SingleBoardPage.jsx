@@ -479,7 +479,7 @@ function ListContainer({
   return (
     <div
       ref={setNodeRef}
-      className="bg-slate-100/80 backdrop-blur-sm rounded-2xl p-4 w-80 flex-shrink-0 flex flex-col shadow-md hover:shadow-lg transition-shadow border border-slate-200/60"
+      className="list-container bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-2xl p-4 w-80 flex-shrink-0 flex flex-col shadow-md hover:shadow-lg transition-shadow border border-slate-200/60 dark:border-slate-700/60"
     >
       <EditableListTitle list={list} onUpdate={onUpdateList} onDelete={onDeleteList} />
 
@@ -676,7 +676,9 @@ export default function SingleBoardPage() {
     }
   };
 
-  const themeClassName = themes.find((t) => t.id === board?.background)?.className || "bg-background";
+  const currentTheme = themes.find((t) => t.id === board?.background);
+  const themeClassName = currentTheme?.className || "bg-background dark:bg-slate-900";
+  const themeStyle = currentTheme?.style || {};
 
   if (!board) {
     return (
@@ -691,123 +693,135 @@ export default function SingleBoardPage() {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className={`min-h-screen transition-colors duration-500 ${themeClassName}`}>
-        {/* Header avec design amélioré */}
-        <header className="bg-white/80 backdrop-blur-lg border-b border-slate-200/60 sticky top-0 z-30 shadow-sm">
-          <div className="max-w-[1920px] mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Link
-                  to="/boards"
-                  className="flex items-center gap-2 text-sm text-primary hover:text-primary-dark font-medium transition-colors group"
-                >
-                  <svg
-                    className="w-4 h-4 group-hover:-translate-x-1 transition-transform"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+      <div
+        className={`min-h-screen transition-all duration-500 ${themeClassName}`}
+        style={themeStyle}
+      >
+        {/* Overlay pour améliorer la lisibilité sur les images de fond */}
+        {currentTheme?.type === "image" && (
+          <div className="fixed inset-0 bg-black/20 dark:bg-black/40 pointer-events-none z-0" />
+        )}
+
+        <div className="relative z-10">
+          {/* Header avec design amélioré */}
+          <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-30 shadow-sm">
+            <div className="max-w-[1920px] mx-auto px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/boards"
+                      className="flex items-center gap-2 text-sm text-primary hover:text-primary-dark font-medium transition-colors group"
+                    >
+                      <svg
+                        className="w-4 h-4 group-hover:-translate-x-1 transition-transform"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                      Retour
+                    </Link>
+                    <div className="w-px h-6 bg-slate-300"></div>
+                    <h1 className="text-2xl font-extrabold text-text">{board.title}</h1>
+                    <FavoriteButton isFavorite={board?.isFavorite} onToggle={handleToggleFavorite} size="lg" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setIsThemeSelectorOpen(true)}
+                    className="px-4 py-2 bg-white/50 hover:bg-white/80 text-text font-medium rounded-lg shadow-sm hover:shadow-md backdrop-blur-sm transition-all flex items-center gap-2 border border-slate-200/60"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                  Retour
-                </Link>
-                <div className="w-px h-6 bg-slate-300"></div>
-                <h1 className="text-2xl font-extrabold text-text">{board.title}</h1>
-                <FavoriteButton isFavorite={board?.isFavorite} onToggle={handleToggleFavorite} size="lg" />
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsThemeSelectorOpen(true)}
-                  className="px-4 py-2 bg-white/50 hover:bg-white/80 text-text font-medium rounded-lg shadow-sm hover:shadow-md backdrop-blur-sm transition-all flex items-center gap-2 border border-slate-200/60"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                  </svg>
-                  Thème
-                </button>
-                <button
-                  onClick={() => setIsShareModalOpen(true)}
-                  className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                  Partager
-                </button>
-                <button
-                  onClick={toggleShortcutsModal}
-                  className="w-10 h-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-lg shadow-sm hover:shadow-md backdrop-blur-sm transition-all border border-slate-200/60"
-                  title="Raccourcis clavier (?)"
-                >
-                  <svg className="w-5 h-5 text-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </button>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                    </svg>
+                    Thème
+                  </button>
+                  <button
+                    onClick={() => setIsShareModalOpen(true)}
+                    className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    Partager
+                  </button>
+                  <button
+                    onClick={toggleShortcutsModal}
+                    className="w-10 h-10 flex items-center justify-center bg-white/50 hover:bg-white/80 rounded-lg shadow-sm hover:shadow-md backdrop-blur-sm transition-all border border-slate-200/60"
+                    title="Raccourcis clavier (?)"
+                  >
+                    <svg className="w-5 h-5 text-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Contenu principal */}
-        <div className="p-6 overflow-x-auto">
-          <div className="flex gap-6 pb-6 min-h-[calc(100vh-120px)] items-start">
-            {lists.map((list) => (
-              <div
-                key={list.id}
-                onMouseEnter={() => setHoveredListId(list.id)}
-                onMouseLeave={() => setHoveredListId(null)}
-              >
-                <ListContainer
-                  list={list}
-                  onAddCard={handleAddCard}
-                  onDeleteCard={handleDeleteCard}
-                  onOpenModal={handleOpenModal}
-                  isCardEditing={editingCardInList === list.id}
-                  setIsCardEditing={(isEditing) => setEditingCardInList(isEditing ? list.id : null)}
-                  onUpdateList={handleUpdateList}
-                  onDeleteList={handleDeleteList}
-                />
-              </div>
-            ))}
-
-            {/* Formulaire ajout de liste modernisé */}
-            <div className="w-80 flex-shrink-0">
-              <form
-                onSubmit={handleAddList}
-                className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-md border border-slate-200/60 hover:shadow-lg transition-shadow"
-              >
-                <input
-                  ref={newListInputRef}
-                  className="w-full bg-white border-2 border-slate-200 focus:border-primary rounded-xl p-3 mb-3 placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
-                  placeholder="+ Ajouter une liste"
-                  value={newListTitle}
-                  onChange={(e) => setNewListTitle(e.target.value)}
-                />
-                <button
-                  className="w-full rounded-lg bg-gradient-to-r from-primary to-primary-dark text-white py-3 font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!newListTitle.trim()}
+          {/* Contenu principal */}
+          <div className="p-6 overflow-x-auto">
+            <div className="flex gap-6 pb-6 min-h-[calc(100vh-120px)] items-start">
+              {lists.map((list) => (
+                <div
+                  key={list.id}
+                  onMouseEnter={() => setHoveredListId(list.id)}
+                  onMouseLeave={() => setHoveredListId(null)}
                 >
-                  Ajouter
-                </button>
-              </form>
+                  <ListContainer
+                    list={list}
+                    onAddCard={handleAddCard}
+                    onDeleteCard={handleDeleteCard}
+                    onOpenModal={handleOpenModal}
+                    isCardEditing={editingCardInList === list.id}
+                    setIsCardEditing={(isEditing) => setEditingCardInList(isEditing ? list.id : null)}
+                    onUpdateList={handleUpdateList}
+                    onDeleteList={handleDeleteList}
+                  />
+                </div>
+              ))}
+
+              {/* Formulaire ajout de liste modernisé */}
+              <div className="w-80 flex-shrink-0">
+                <form
+                  onSubmit={handleAddList}
+                  className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-md border border-slate-200/60 hover:shadow-lg transition-shadow"
+                >
+                  <input
+                    ref={newListInputRef}
+                    className="w-full bg-white border-2 border-slate-200 focus:border-primary rounded-xl p-3 mb-3 placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+                    placeholder="+ Ajouter une liste"
+                    value={newListTitle}
+                    onChange={(e) => setNewListTitle(e.target.value)}
+                  />
+                  <button
+                    className="w-full rounded-lg bg-gradient-to-r from-primary to-primary-dark text-white py-3 font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!newListTitle.trim()}
+                  >
+                    Ajouter
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         </div>
