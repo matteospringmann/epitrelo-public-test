@@ -146,3 +146,18 @@ export async function updateUserTheme(theme) {
   const { data } = await api.put("/user/theme", { theme });
   return data;
 }
+
+export async function linkGoogleAccount(googleId) {
+  const { data } = await api.post("/user/link-google", { googleId });
+  return data;
+}
+
+export async function unlinkGoogleAccount() {
+  const { data } = await api.delete("/user/unlink-google");
+  return data;
+}
+
+export async function setPassword(password) {
+  const { data } = await api.post("/user/set-password", { password });
+  return data;
+}

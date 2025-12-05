@@ -3,28 +3,139 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-// Mettre à jour le nom de l'utilisateur
+// Mettre à jour le profil utilisateur
 export async function updateUserProfile(req, res) {
-  const { name } = req.body;
+  const { name, bio, location, website, avatarUrl, emailNotifications } = req.body;
   const userId = req.user.id;
 
-  if (!name) {
-    return res.status(400).json({ error: "Le nom est requis" });
-  }
-
   try {
+    const dataToUpdate = {};
+    if (name !== undefined) dataToUpdate.name = name;
+    if (bio !== undefined) dataToUpdate.bio = bio;
+    if (location !== undefined) dataToUpdate.location = location;
+    if (website !== undefined) dataToUpdate.website = website;
+    if (avatarUrl !== undefined) dataToUpdate.avatarUrl = avatarUrl;
+    if (emailNotifications !== undefined) dataToUpdate.emailNotifications = emailNotifications;
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { name },
+      data: dataToUpdate,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatarUrl: true,
+        theme: true,
+        bio: true,
+        location: true,
+        website: true,
+        emailNotifications: true,
+        googleId: true,
+        createdAt: true,
+      },
     });
-    const { passwordHash, ...user } = updatedUser;
-    res.json(user);
+    res.json(updatedUser);
   } catch (error) {
     res.status(500).json({ error: "Erreur lors de la mise à jour du profil" });
   }
 }
 
-// Mettre à jour le thème de l'utilisateur
+// Lier un compte Google existant
+export async function linkGoogleAccount(req, res) {
+  const { googleId } = req.body;
+  const userId = req.user.id;
+
+  if (!googleId) {
+    return res.status(400).json({ error: "Google ID requis" });
+  }
+
+  try {
+    // Vérifier que ce Google ID n'est pas déjà utilisé
+    const existingUser = await prisma.user.findUnique({
+      where: { googleId },
+    });
+
+    if (existingUser && existingUser.id !== userId) {
+      return res.status(400).json({ error: "Ce compte Google est déjà lié à un autre utilisateur" });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { googleId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatarUrl: true,
+        theme: true,
+        googleId: true,
+        createdAt: true,
+      },
+    });
+
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ error: "Erreur lors de la liaison du compte Google" });
+  }
+}
+
+// Délier le compte Google
+export async function unlinkGoogleAccount(req, res) {
+  const userId = req.user.id;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user.passwordHash) {
+      return res.status(400).json({
+        error: "Vous devez d'abord définir un mot de passe avant de délier votre compte Google",
+      });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { googleId: null },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatarUrl: true,
+        theme: true,
+        googleId: true,
+        createdAt: true,
+      },
+    });
+
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ error: "Erreur lors de la suppression de la liaison Google" });
+  }
+}
+
+// Définir un mot de passe pour les comptes Google
+export async function setPassword(req, res) {
+  const { password } = req.body;
+  const userId = req.user.id;
+
+  if (!password || password.length < 6) {
+    return res.status(400).json({ error: "Le mot de passe doit contenir au moins 6 caractères" });
+  }
+
+  try {
+    const bcrypt = await import("bcryptjs");
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    res.json({ message: "Mot de passe défini avec succès" });
+  } catch (error) {
+    res.status(500).json({ error: "Erreur lors de la définition du mot de passe" });
+  }
+}
+
 export async function updateUserTheme(req, res) {
   const { theme } = req.body;
 
@@ -51,9 +162,9 @@ export async function updateUserTheme(req, res) {
   }
 }
 
-// Récupérer les statistiques de l'utilisateur
 export async function getUserStats(req, res) {
   const userId = req.user.id;
+
   try {
     const boardCount = await prisma.board.count({
       where: {
@@ -71,27 +182,32 @@ export async function getUserStats(req, res) {
 
     const cardCount = await prisma.card.count({
       where: {
-        list: {
-          board: {
-            OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+        OR: [
+          { assignedUserId: userId },
+          {
+            list: {
+              board: {
+                OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+              },
+            },
           },
-        },
+        ],
       },
     });
 
-    res.json({ boardCount, listCount, cardCount });
+    const commentCount = await prisma.comment.count({
+      where: { userId },
+    });
+
+    res.json({ boardCount, listCount, cardCount, commentCount });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la récupération des statistiques" });
+    res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
   }
 }
 
-// Supprimer le compte de l'utilisateur
 export async function deleteUserAccount(req, res) {
   const userId = req.user.id;
   try {
-    // Note : La logique de suppression en cascade est gérée par le schéma Prisma
     await prisma.user.delete({
       where: { id: userId },
     });
