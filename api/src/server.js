@@ -21,14 +21,33 @@ import searchRoutes from "./routes/search.js";
 const app = express();
 
 // Middlewares
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.CORS_ORIGIN, // Ton URL de production finale
+];
+
 app.use(
   cors({
-    origin:
-      process.env.CORS_ORIGIN ||
-      "https://epitrelo-public-test-9co0kmvip-matteospringmanns-projects.vercel.app/",
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.endsWith("/") ? origin.slice(0, -1) : origin;
+
+      const isVercel = cleanOrigin.endsWith(".vercel.app");
+      const isAllowed = allowedOrigins.includes(cleanOrigin);
+
+      if (isAllowed || isVercel) {
+        callback(null, true);
+      } else {
+        console.error("CORS refusé pour :", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   }),
 );
+
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
