@@ -124,7 +124,7 @@ export default function Login() {
           </div>
 
           <a
-            href="http://localhost:4000/api/auth/google"
+            href={`${import.meta.env.VITE_API_BASE}/auth/google`}
             className="w-full flex justify-center items-center gap-3 py-3 border border-slate-300 rounded-lg hover:bg-surface transition-colors"
           >
             <GoogleIcon />
