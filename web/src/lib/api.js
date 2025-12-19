@@ -1,14 +1,26 @@
 import axios from "axios";
 
+// On récupère la variable, et on s'assure qu'elle n'est pas vide
+const rawBaseURL = import.meta.env.VITE_API_BASE;
+
+// Correction automatique : si l'URL ne finit pas par /api, on le rajoute
+let finalBaseURL = rawBaseURL || "/api";
+if (rawBaseURL && !rawBaseURL.endsWith("/api")) {
+  finalBaseURL = `${rawBaseURL}/api`;
+}
+
+console.log("API lancée sur :", finalBaseURL);
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE || "/api",
+  baseURL: finalBaseURL,
   withCredentials: true,
 });
 
+// Le reste de tes fonctions ne change pas...
 export async function getMe() {
   try {
     const { data } = await api.get("/auth/me");
-    return data; // ✅ Correction ici
+    return data;
   } catch {
     return null;
   }
@@ -106,9 +118,7 @@ export async function deleteLabel(id) {
 }
 
 export async function assignLabelToCard(labelId, cardId) {
-  const { data: updated } = await api.post(
-    `/labels/${labelId}/card/${cardId}`,
-  );
+  const { data: updated } = await api.post(`/labels/${labelId}/card/${cardId}`);
   return updated;
 }
 
