@@ -23,9 +23,11 @@ const app = express();
 // Middlewares
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin:
+      process.env.CORS_ORIGIN ||
+      "https://epitrelo-public-test-9co0kmvip-matteospringmanns-projects.vercel.app/",
     credentials: true,
-  })
+  }),
 );
 app.use(helmet());
 app.use(express.json());

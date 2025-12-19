@@ -7,8 +7,8 @@ const prisma = new PrismaClient();
 const setCookie = (res, token) =>
   res.cookie("token", token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: false,
+    sameSite: "none",
+    secure: true,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
@@ -63,7 +63,14 @@ export async function login(req, res) {
 export async function me(req, res) {
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
-    select: { id: true, name: true, email: true, avatarUrl: true, theme: true, createdAt: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      avatarUrl: true,
+      theme: true,
+      createdAt: true,
+    },
   });
   res.json(user); // Retourne directement l'utilisateur, pas { user: ... }
 }

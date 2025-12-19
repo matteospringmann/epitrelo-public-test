@@ -44,7 +44,7 @@ router.get(
   }),
   (req, res) => {
     setJwtCookie(res, req.user);
-    res.redirect("http://localhost:5173/boards");
+    res.redirect(`${process.env.CORS_ORIGIN}/boards`);
   },
 );
 
