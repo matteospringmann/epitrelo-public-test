@@ -29,18 +29,33 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectPath = searchParams.get("redirect");
+
+  // Récupère l'URL de redirection (ex: /invite/abc)
+  const redirectPath = searchParams.get("redirect") || "/boards";
+
+  // URL de base de l'API (ex: https://api.render.com/api)
+  const apiBase = import.meta.env.VITE_API_BASE || "/api";
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr(null);
+    setIsLoading(true);
+
     try {
+      // On utilise l'instance axios "api" définie dans lib/api.js
       await api.post("/auth/register", { name, email, password });
-      nav(redirectPath || "/boards");
+      nav(redirectPath);
     } catch (e) {
-      setErr(e.response?.data?.error || "L'inscription a échoué");
+      setErr(
+        e.response?.data?.error ||
+          "L'inscription a échoué. Veuillez réessayer.",
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,27 +67,24 @@ export default function Register() {
             to="/"
             className="text-3xl font-extrabold text-primary tracking-tight"
           >
-            Créez votre compte
+            EpiTrello
           </Link>
           <p className="mt-2 text-text-muted">
-            Rejoignez EpiTrello et commencez à organiser vos projets.
+            Créez votre compte et commencez à organiser vos projets.
           </p>
         </div>
 
-        <form
-          onSubmit={onSubmit}
-          className="bg-white p-8 rounded-2xl shadow-lg space-y-6 border border-slate-200"
-        >
+        <div className="bg-white p-8 rounded-2xl shadow-lg border border-slate-200">
           {err && (
-            <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg text-center">
+            <div className="mb-6 bg-red-50 text-red-700 text-sm p-3 rounded-lg text-center border border-red-100">
               {err}
             </div>
           )}
 
-          {/* --- AJOUT DE LA SECTION GOOGLE --- */}
+          {/* Bouton Google OAuth */}
           <a
-            href={`${import.meta.env.VITE_API_BASE}/auth/google`}
-            className="w-full flex justify-center items-center gap-3 py-3 border border-slate-300 rounded-lg hover:bg-surface transition-colors"
+            href={`${apiBase}/auth/google`}
+            className="w-full flex justify-center items-center gap-3 py-3 border border-slate-300 rounded-lg hover:bg-surface transition-colors mb-6 shadow-sm"
           >
             <GoogleIcon />
             <span className="text-sm font-semibold text-text-muted">
@@ -80,88 +92,95 @@ export default function Register() {
             </span>
           </a>
 
-          <div className="relative my-2">
+          <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-300" />
+              <div className="w-full border-t border-slate-200" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-text-muted">
-                Ou s'inscrire avec un e-mail
+              <span className="bg-white px-4 text-text-muted uppercase tracking-wider text-xs">
+                Ou avec un e-mail
               </span>
             </div>
           </div>
-          {/* ------------------------------------- */}
 
-          <div>
-            <label
-              className="text-sm font-medium text-text-muted"
-              htmlFor="name"
+          <form onSubmit={onSubmit} className="space-y-5">
+            <div>
+              <label
+                className="block text-sm font-semibold text-text mb-1"
+                htmlFor="name"
+              >
+                Nom complet
+              </label>
+              <input
+                id="name"
+                className="w-full border border-slate-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary-light transition placeholder:text-slate-400"
+                placeholder="Ex: Jean Dupont"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+                required
+              />
+            </div>
+
+            <div>
+              <label
+                className="block text-sm font-semibold text-text mb-1"
+                htmlFor="email"
+              >
+                Adresse e-mail
+              </label>
+              <input
+                id="email"
+                className="w-full border border-slate-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary-light transition placeholder:text-slate-400"
+                placeholder="jean@exemple.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                type="email"
+                required
+              />
+            </div>
+
+            <div>
+              <label
+                className="block text-sm font-semibold text-text mb-1"
+                htmlFor="password"
+              >
+                Mot de passe
+              </label>
+              <input
+                id="password"
+                className="w-full border border-slate-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary-light transition placeholder:text-slate-400"
+                type="password"
+                placeholder="Minimum 6 caractères"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                minLength={6}
+                required
+              />
+            </div>
+
+            <button
+              disabled={isLoading}
+              className={`w-full rounded-lg bg-primary text-white py-3 font-bold shadow-md hover:bg-primary-dark transition-all transform active:scale-[0.98] ${
+                isLoading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
             >
-              Nom complet
-            </label>
-            <input
-              id="name"
-              className="mt-1 w-full border border-slate-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary-light transition"
-              placeholder="Prénom Nom"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoComplete="name"
-              required
-            />
-          </div>
+              {isLoading ? "Création en cours..." : "Créer mon compte"}
+            </button>
+          </form>
 
-          <div>
-            <label
-              className="text-sm font-medium text-text-muted"
-              htmlFor="email"
-            >
-              Adresse e-mail
-            </label>
-            <input
-              id="email"
-              className="mt-1 w-full border border-slate-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary-light transition"
-              placeholder="vous@exemple.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              type="email"
-              required
-            />
-          </div>
-
-          <div>
-            <label
-              className="text-sm font-medium text-text-muted"
-              htmlFor="password"
-            >
-              Mot de passe
-            </label>
-            <input
-              id="password"
-              className="mt-1 w-full border border-slate-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary-light transition"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-              required
-            />
-          </div>
-
-          <button className="w-full rounded-lg bg-primary text-white py-3 font-semibold shadow-md hover:bg-primary-dark transition">
-            Créer mon compte
-          </button>
-
-          <div className="text-sm text-center text-text-muted">
+          <div className="mt-8 text-sm text-center text-text-muted">
             Vous avez déjà un compte ?{" "}
             <Link
               to="/login"
-              className="font-medium text-primary hover:underline"
+              className="font-bold text-primary hover:text-primary-dark hover:underline"
             >
               Connectez-vous
             </Link>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
