@@ -17,11 +17,10 @@ export async function getBoards(req, res) {
     },
   });
 
-  // Ajouter le flag isFavorite à chaque board
   const boardsWithFavorite = boards.map(board => ({
     ...board,
     isFavorite: board.favoritedBy.length > 0,
-    favoritedBy: undefined, // Supprimer l'info brute
+    favoritedBy: undefined,
   }));
 
   res.json(boardsWithFavorite);
@@ -155,7 +154,6 @@ export async function addToFavorites(req, res) {
   const { id } = req.params;
 
   try {
-    // Vérifier que l'utilisateur a accès au board
     const board = await prisma.board.findFirst({
       where: {
         id: Number(id),

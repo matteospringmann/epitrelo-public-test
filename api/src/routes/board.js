@@ -15,7 +15,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.get("/", getBoards);
-router.get("/favorites", getFavoriteBoards); // AVANT la route :id
+router.get("/favorites", getFavoriteBoards);
 router.post("/", createBoard);
 router.get("/:id", getBoardById);
 router.put("/:id", updateBoard);

@@ -16,6 +16,7 @@ import userRoutes from "./routes/user.js";
 import commentRoutes from "./routes/comment.js";
 import labelRoutes from "./routes/label.js";
 import invitationRoutes from "./routes/invitation.js";
+import searchRoutes from "./routes/search.js";
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use("/api/cards", cardRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/labels", labelRoutes);
+app.use("/api/search", searchRoutes); // Nouvelle route
 app.use("/api", invitationRoutes);
 
 // Export pour les tests

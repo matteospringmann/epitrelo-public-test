@@ -161,3 +161,8 @@ export async function setPassword(password) {
   const { data } = await api.post("/user/set-password", { password });
   return data;
 }
+
+export async function globalSearch(query) {
+  const { data } = await api.get("/search", { params: { q: query } });
+  return data;
+}

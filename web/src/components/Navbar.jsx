@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { getMe, logout as apiLogout } from "../lib/api";
 import ThemeToggle from "./ThemeToggle";
+import SearchBar from "./SearchBar";
 
 export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
@@ -52,8 +53,8 @@ export default function Navbar() {
             }`}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                    <div className="flex items-center">
+                <div className="flex items-center justify-between h-16 gap-4">
+                    <div className="flex items-center flex-shrink-0">
                         <Link
                             to="/"
                             className="text-2xl font-extrabold text-primary tracking-tight flex items-center gap-2"
@@ -63,11 +64,17 @@ export default function Navbar() {
                                 alt="EpiTrello Logo"
                                 className="h-8 w-10"
                             />
-                            EpiTrello
+                            <span className="hidden sm:inline">EpiTrello</span>
                         </Link>
                     </div>
-                    <div className="hidden md:block">
-                        <div className="ml-10 flex items-baseline space-x-4">
+
+                    {/* Barre de recherche au centre */}
+                    <div className="hidden md:flex flex-1 max-w-2xl mx-4">
+                        <SearchBar />
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <div className="hidden md:flex items-center space-x-4">
                             <NavLink to="/" className={navLinkClass}>
                                 Home
                             </NavLink>
@@ -75,15 +82,13 @@ export default function Navbar() {
                                 Boards
                             </NavLink>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-3">
                         <ThemeToggle />
                         <div className="relative" ref={menuRef}>
                             <button
                                 onClick={() => setMenuOpen(!menuOpen)}
                                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-semibold shadow-md hover:bg-primary-dark transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-light"
                             >
-                                <span>Account</span>
+                                <span className="hidden sm:inline">Account</span>
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     className={`h-5 w-5 transition-transform ${menuOpen ? "rotate-180" : ""}`}
@@ -151,6 +156,11 @@ export default function Navbar() {
                             )}
                         </div>
                     </div>
+                </div>
+
+                {/* Barre de recherche mobile */}
+                <div className="md:hidden pb-3">
+                    <SearchBar />
                 </div>
             </div>
         </nav>

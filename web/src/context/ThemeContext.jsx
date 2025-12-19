@@ -7,7 +7,6 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState('light');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Charger le thème au démarrage
   useEffect(() => {
     const loadTheme = async () => {
       try {
@@ -16,7 +15,6 @@ export function ThemeProvider({ children }) {
         setTheme(savedTheme);
         applyTheme(savedTheme);
       } catch (error) {
-        // Si l'utilisateur n'est pas connecté, utiliser le localStorage
         const localTheme = localStorage.getItem('theme') || 'light';
         setTheme(localTheme);
         applyTheme(localTheme);
@@ -41,7 +39,6 @@ export function ThemeProvider({ children }) {
     applyTheme(newTheme);
     localStorage.setItem('theme', newTheme);
 
-    // Sauvegarder dans la base si l'utilisateur est connecté
     try {
       await updateUserTheme(newTheme);
     } catch (error) {

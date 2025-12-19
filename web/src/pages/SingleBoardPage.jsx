@@ -60,6 +60,7 @@ const getDeadlineStyle = (deadline) => {
 function Card({ card, onDelete, onOpenModal }) {
   return (
     <div
+      data-card-id={card.id}
       className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-slate-200/60 hover:border-primary/40 transition-all duration-200 cursor-pointer transform hover:-translate-y-0.5"
       onClick={onOpenModal}
     >
